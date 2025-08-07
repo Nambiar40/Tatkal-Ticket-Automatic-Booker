@@ -10,5 +10,13 @@
         {{ form.as_p }}
         <button type="submit">Login</button>
     </form>
+
+    <p>Don't have an account? <a href="{% url 'signup' %}">Sign up here</a></p>
+
+    {% if form.errors %}
+        <div style="color: red;">
+            <strong>Login failed:</strong> Please check your username and password.
+        </div>
+    {% endif %}
 </body>
 </html>

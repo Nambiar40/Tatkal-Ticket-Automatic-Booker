@@ -3,6 +3,7 @@ from .forms import BookingTaskForm
 from .models import BookingTask
 from django.contrib.auth.decorators import login_required
 from .tasks import execute_booking
+from django.contrib.auth.forms import UserCreationForm  
 
 @login_required
 def dashboard(request):
@@ -22,3 +23,14 @@ def add_booking_task(request):
     else:
         form = BookingTaskForm()
     return render(request, 'booking/add_task.html', {'form': form})
+
+# ✅ New Signup View
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
