@@ -1,0 +1,9 @@
+<h2>Your Booking Tasks</h2>
+<ul>
+    {% for task in tasks %}
+        <li>{{ task.train_number }} on {{ task.journey_date }} - {{ task.status }}</li>
+    {% empty %}
+        <li>No tasks found.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'add_task' %}">Add New Task</a>
