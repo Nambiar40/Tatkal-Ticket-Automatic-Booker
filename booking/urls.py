@@ -1,10 +1,9 @@
-from django.contrib import admin
-from django.urls import path, include
-from accounts import views as account_views
+from django.urls import path
+from . import views  # booking app views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('dashboard/', include('booking.urls')),
-    path('accounts/', include('accounts.urls')),
-    path('login/', account_views.login_view, name='login'),  # ✅ This ma
+    path('', views.dashboard, name='dashboard'),  # main dashboard
+    path('add-task/', views.add_booking_task, name='add_task'),
+    # Add other booking-related URLs here
 ]
+
