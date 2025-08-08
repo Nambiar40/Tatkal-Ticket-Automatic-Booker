@@ -1,10 +1,10 @@
-from django.urls import path
-from . import views
-from django.shortcuts import redirect 
+from django.contrib import admin
+from django.urls import path, include
+from accounts import views as account_views
 
 urlpatterns = [
-    path('', lambda request: redirect('login')),
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('add/', views.add_booking_task, name='add_task'),
-    path('signup/', views.signup, name='signup'),
+    path('admin/', admin.site.urls),
+    path('dashboard/', include('booking.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('login/', account_views.login_view, name='login'),  # ✅ This ma
 ]

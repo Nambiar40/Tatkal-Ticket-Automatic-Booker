@@ -17,6 +17,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'booking',
     'django_celery_beat',
+    'accounts',
+    
 ]
 
 MIDDLEWARE = [
