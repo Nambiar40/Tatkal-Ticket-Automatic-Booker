@@ -1,9 +1,42 @@
-<h2>Your Booking Tasks</h2>
-<ul>
-    {% for task in tasks %}
-        <li>{{ task.train_number }} on {{ task.journey_date }} - {{ task.status }}</li>
-    {% empty %}
-        <li>No tasks found.</li>
-    {% endfor %}
-</ul>
-<a href="{% url 'add_task' %}">Add New Task</a>
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{% static 'booking/status.css' %}">
+    <script src="{% static 'booking/dashboard.js' %}"></script>
+</head>
+<body>
+    <h2>Your Booking Tasks</h2>
+
+    <table border="1" cellpadding="10">
+        <tr>
+            <th>Train Number</th>
+            <th>Booking Time</th>
+            <th>Status</th>
+        </tr>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.train_number }}</td>
+            <td>{{ task.booking_time }}</td>
+            <td>
+                {% if task.status == "Completed" %}
+                    <span class="status-completed">{{ task.status }}</span>
+                {% elif task.status == "Scheduled" %}
+                    <span class="status-scheduled">{{ task.status }}</span>
+                {% else %}
+                    <span class="status-failed">{{ task.status }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No booking tasks found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="{% url 'add_task' %}">Add New Booking Task</a>
+</body>
+</html>

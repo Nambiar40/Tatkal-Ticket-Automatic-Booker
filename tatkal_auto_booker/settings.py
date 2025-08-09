@@ -1,4 +1,5 @@
 from pathlib import Path
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -82,3 +83,9 @@ EMAIL_HOST_PASSWORD = 'your_password'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+CELERY_BEAT_SCHEDULE = {
+    'delete-old-tasks-daily': {
+        'task': 'booking.tasks.delete_old_tasks',
+        'schedule': crontab(hour=0, minute=0),  # Runs every midnight
+    },
+}

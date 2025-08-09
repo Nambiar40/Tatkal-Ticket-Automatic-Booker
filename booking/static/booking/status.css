@@ -1,0 +1,26 @@
+.status-completed {
+    background-color: #4CAF50; /* Green */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.status-scheduled {
+    background-color: #FFC107; /* Yellow */
+    color: black;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.status-failed {
+    background-color: #F44336; /* Red */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+}

@@ -3,7 +3,11 @@ from .forms import BookingTaskForm
 from .models import BookingTask
 from django.contrib.auth.decorators import login_required
 from .tasks import execute_booking
-from django.contrib.auth.forms import UserCreationForm  
+from django.contrib.auth.forms import UserCreationForm 
+from celery import shared_task 
+from django.utils import timezone
+from datetime import timedelta
+
 
 @login_required
 def dashboard(request):
@@ -34,3 +38,11 @@ def signup(request):
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
+@shared_task
+
+@shared_task
+def delete_old_tasks():
+    cutoff = timezone.now() - timedelta(days=1)  # Older than 1 day
+    deleted_count, _ = BookingTask.objects.filter(booking_time__lt=cutoff).delete()
+    print(f"Deleted {deleted_count} old booking tasks")
+
