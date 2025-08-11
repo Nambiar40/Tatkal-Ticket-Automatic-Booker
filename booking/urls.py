@@ -1,9 +1,10 @@
 from django.urls import path
-from . import views  # booking app views
+from . import views
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),  # main dashboard
-    path('add-task/', views.add_booking_task, name='add_task'),
-    # Add other booking-related URLs here
+    path('', views.dashboard, name='dashboard'),
+    path('add-task/', views.add_task, name='add_task'),
+    path('autocomplete/stations/', views.autocomplete_stations, name='autocomplete_stations'),
+    path('autocomplete/trains/', views.autocomplete_trains, name='autocomplete_trains'),
 ]
 

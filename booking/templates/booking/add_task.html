@@ -1,6 +1,191 @@
-<h2>Add Booking Task</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit</button>
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Booking Task</title>
+    <link rel="stylesheet" href="{% static 'booking/autocomplete.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h2>Add Booking Task</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.train_number.id_for_label }}">Train Number:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="{{ form.train_number.id_for_label }}" 
+                           name="{{ form.train_number.name }}" 
+                           placeholder="Type train number or name..."
+                           autocomplete="off">
+                    <div id="train-autocomplete-list" class="autocomplete-items"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.train_name.id_for_label }}">Train Name:</label>
+                <input type="text" id="{{ form.train_name.id_for_label }}" 
+                       name="{{ form.train_name.name }}" 
+                       placeholder="Train name">
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.source_station.id_for_label }}">Source Station:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="{{ form.source_station.id_for_label }}" 
+                           name="{{ form.source_station.name }}" 
+                           placeholder="Type source station..."
+                           autocomplete="off">
+                    <div id="source-autocomplete-list" class="autocomplete-items"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.destination_station.id_for_label }}">Destination Station:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="{{ form.destination_station.id_for_label }}" 
+                           name="{{ form.destination_station.name }}" 
+                           placeholder="Type destination station..."
+                           autocomplete="off">
+                    <div id="destination-autocomplete-list" class="autocomplete-items"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.journey_date.id_for_label }}">Journey Date:</label>
+                <input type="date" id="{{ form.journey_date.id_for_label }}" 
+                       name="{{ form.journey_date.name }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.passenger_name.id_for_label }}">Passenger Name:</label>
+                <input type="text" id="{{ form.passenger_name.id_for_label }}" 
+                       name="{{ form.passenger_name.name }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.passenger_age.id_for_label }}">Passenger Age:</label>
+                <input type="number" id="{{ form.passenger_age.id_for_label }}" 
+                       name="{{ form.passenger_age.name }}" min="1" max="120">
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.passenger_gender.id_for_label }}">Gender:</label>
+                <select id="{{ form.passenger_gender.id_for_label }}" 
+                        name="{{ form.passenger_gender.name }}">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.class_type.id_for_label }}">Class Type:</label>
+                <select id="{{ form.class_type.id_for_label }}" 
+                        name="{{ form.class_type.name }}">
+                    <option value="SL">Sleeper</option>
+                    <option value="3A">3rd AC</option>
+                    <option value="2A">2nd AC</option>
+                    <option value="1A">1st AC</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.booking_time.id_for_label }}">Booking Time:</label>
+                <input type="datetime-local" id="{{ form.booking_time.id_for_label }}" 
+                       name="{{ form.booking_time.name }}">
+            </div>
+            
+            <button type="submit">Submit Booking Task</button>
+        </form>
+    </div>
+
+    <script>
+        // Autocomplete functionality
+        function autocomplete(inp, arr, endpoint) {
+            let currentFocus;
+            
+            inp.addEventListener("input", function() {
+                let val = this.value;
+                closeAllLists();
+                if (!val) return false;
+                currentFocus = -1;
+                
+                const listContainer = document.createElement("DIV");
+                listContainer.setAttribute("class", "autocomplete-items");
+                this.parentNode.appendChild(listContainer);
+                
+                fetch(`${endpoint}?q=${encodeURIComponent(val)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(item => {
+                            const suggestionDiv = document.createElement("DIV");
+                            suggestionDiv.innerHTML = typeof item === 'string' ? item : item.display || item.name;
+                            suggestionDiv.addEventListener("click", function() {
+                                inp.value = typeof item === 'string' ? item : item.name || item.display;
+                                closeAllLists();
+                            });
+                            listContainer.appendChild(suggestionDiv);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+            
+            inp.addEventListener("keydown", function(e) {
+                let x = document.getElementById(this.id + "-autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    currentFocus++;
+                    addActive(x);
+                } else if (e.keyCode == 38) {
+                    currentFocus--;
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    e.preventDefault();
+                    if (currentFocus > -1 && x) x[currentFocus].click();
+                }
+            });
+            
+            function addActive(x) {
+                if (!x) return false;
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+            
+            function removeActive(x) {
+                for (let i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
+                }
+            }
+            
+            function closeAllLists(elmnt) {
+                const items = document.getElementsByClassName("autocomplete-items");
+                for (let i = 0; i < items.length; i++) {
+                    if (elmnt != items[i] && elmnt != inp) {
+                        items[i].parentNode.removeChild(items[i]);
+                    }
+                }
+            }
+            
+            document.addEventListener("click", function(e) {
+                closeAllLists(e.target);
+            });
+        }
+        
+        // Initialize autocomplete for source and destination stations
+        document.addEventListener("DOMContentLoaded", function() {
+            const sourceInput = document.getElementById("{{ form.source_station.id_for_label }}");
+            const destinationInput = document.getElementById("{{ form.destination_station.id_for_label }}");
+            const trainInput = document.getElementById("{{ form.train_number.id_for_label }}");
+            
+            autocomplete(sourceInput, [], '/booking/autocomplete/stations/');
+            autocomplete(destinationInput, [], '/booking/autocomplete/stations/');
+            autocomplete(trainInput, [], '/booking/autocomplete/trains/');
+        });
+    </script>
+</body>
+</html>

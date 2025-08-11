@@ -1,25 +1,24 @@
 import os
 from pathlib import Path
-from decouple import config
+from decouple import config, UndefinedValueError
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+# -------------------------------------------------
+# SECURITY SETTINGS
+# -------------------------------------------------
+SECRET_KEY = 'django-insecure-change-this-in-production-1234567890'
+DEBUG = True
+ALLOWED_HOSTS = ["*"]
 
-# Auto ALLOWED_HOSTS
-if DEBUG:
-    ALLOWED_HOSTS = ["*"]  # Allow all in local dev
-else:
-    # Render automatically sets RENDER_EXTERNAL_HOSTNAME
-    RENDER_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-    if RENDER_HOSTNAME:
-        ALLOWED_HOSTS.append(RENDER_HOSTNAME)
-
-# Database
-DATABASE_URL = config('DATABASE_URL', default='')
+# -------------------------------------------------
+# DATABASE CONFIG
+# -------------------------------------------------
+try:
+    DATABASE_URL = config('DATABASE_URL')
+except UndefinedValueError:
+    DATABASE_URL = ''
 
 if DATABASE_URL.strip():
     DATABASES = {
@@ -33,17 +32,23 @@ else:
         }
     }
 
-# Static & Media files
+# -------------------------------------------------
+# STATIC & MEDIA FILES
+# -------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# WhiteNoise for static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# -------------------------------------------------
+# MIDDLEWARE
+# -------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Enable WhiteNoise
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -52,10 +57,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# WhiteNoise settings (optional but good for caching)
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Application definition
+# -------------------------------------------------
+# INSTALLED APPS
+# -------------------------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,16 +67,24 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # your apps here...
-    'booking'
+    'booking',
+    'accounts',
 ]
 
+# -------------------------------------------------
+# DEFAULT PRIMARY KEY FIELD TYPE
+# -------------------------------------------------
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# -------------------------------------------------
+# URLS / TEMPLATES / WSGI
+# -------------------------------------------------
 ROOT_URLCONF = 'tatkal_auto_booker.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # ✅ Now you can use /templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,3 +98,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'tatkal_auto_booker.wsgi.application'
+
+# -------------------------------------------------
+# LOGIN / LOGOUT REDIRECTS
+# -------------------------------------------------
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
