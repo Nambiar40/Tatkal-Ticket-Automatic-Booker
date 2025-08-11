@@ -1,0 +1,3 @@
+web: gunicorn tatkal_auto_booker.wsgi
+worker: celery -A tatkal_auto_booker worker -l info
+beat: celery -A tatkal_auto_booker beat -l info

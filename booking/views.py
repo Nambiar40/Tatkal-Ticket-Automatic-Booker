@@ -3,16 +3,30 @@ from .forms import BookingTaskForm
 from .models import BookingTask
 from django.contrib.auth.decorators import login_required
 from .tasks import execute_booking
-from django.contrib.auth.forms import UserCreationForm 
-from celery import shared_task 
+from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 from datetime import timedelta
 
 
 @login_required
 def dashboard(request):
-    tasks = BookingTask.objects.filter(user=request.user)
+    now = timezone.now()
+
+    # ✅ Delete past bookings (before now)
+    BookingTask.objects.filter(user=request.user, booking_time__lt=now).delete()
+
+    # ✅ Delete completed bookings older than 1 hour
+    BookingTask.objects.filter(
+        user=request.user,
+        status='completed',  # <-- Make sure your model has this field
+        booking_time__lt=now - timedelta(hours=1)
+    ).delete()
+
+    # Fetch only upcoming + recently completed bookings
+    tasks = BookingTask.objects.filter(user=request.user).order_by('booking_time')
+
     return render(request, 'booking/dashboard.html', {'tasks': tasks})
+
 
 @login_required
 def add_booking_task(request):
@@ -28,6 +42,7 @@ def add_booking_task(request):
         form = BookingTaskForm()
     return render(request, 'booking/add_task.html', {'form': form})
 
+
 # ✅ New Signup View
 def signup(request):
     if request.method == 'POST':
@@ -38,11 +53,3 @@ def signup(request):
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
-@shared_task
-
-@shared_task
-def delete_old_tasks():
-    cutoff = timezone.now() - timedelta(days=1)  # Older than 1 day
-    deleted_count, _ = BookingTask.objects.filter(booking_time__lt=cutoff).delete()
-    print(f"Deleted {deleted_count} old booking tasks")
-
