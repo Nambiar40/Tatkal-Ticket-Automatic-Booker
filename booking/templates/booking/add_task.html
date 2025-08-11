@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Booking Task</title>
+    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
     <link rel="stylesheet" href="{% static 'booking/autocomplete.css' %}">
 </head>
 <body>
@@ -13,22 +14,25 @@
         <form method="post">
             {% csrf_token %}
             
-            <div class="form-group">
-                <label for="{{ form.train_number.id_for_label }}">Train Number:</label>
-                <div class="autocomplete-container">
-                    <input type="text" id="{{ form.train_number.id_for_label }}" 
-                           name="{{ form.train_number.name }}" 
-                           placeholder="Type train number or name..."
-                           autocomplete="off">
-                    <div id="train-autocomplete-list" class="autocomplete-items"></div>
+            {% if form.non_field_errors %}
+                <div class="error-messages">
+                    {{ form.non_field_errors }}
                 </div>
-            </div>
+            {% endif %}
             
             <div class="form-group">
-                <label for="{{ form.train_name.id_for_label }}">Train Name:</label>
-                <input type="text" id="{{ form.train_name.id_for_label }}" 
-                       name="{{ form.train_name.name }}" 
-                       placeholder="Train name">
+                <label for="{{ form.train_name_number.id_for_label }}">Train Name & Number:</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="{{ form.train_name_number.id_for_label }}" 
+                           name="{{ form.train_name_number.name }}" 
+                           placeholder="e.g., Rajdhani Express 12345"
+                           autocomplete="off"
+                           value="{{ form.train_name_number.value|default:'' }}">
+                    {% if form.train_name_number.errors %}
+                        <div class="error">{{ form.train_name_number.errors }}</div>
+                    {% endif %}
+                    <div id="train-autocomplete-list" class="autocomplete-items"></div>
+                </div>
             </div>
             
             <div class="form-group">
@@ -103,88 +107,169 @@
     </div>
 
     <script>
-        // Autocomplete functionality
-        function autocomplete(inp, arr, endpoint) {
-            let currentFocus;
+        // Enhanced Autocomplete functionality
+        function autocomplete(inp, endpoint, type) {
+            let currentFocus = -1;
+            let debounceTimer;
             
-            inp.addEventListener("input", function() {
-                let val = this.value;
-                closeAllLists();
-                if (!val) return false;
-                currentFocus = -1;
-                
-                const listContainer = document.createElement("DIV");
-                listContainer.setAttribute("class", "autocomplete-items");
-                this.parentNode.appendChild(listContainer);
-                
-                fetch(`${endpoint}?q=${encodeURIComponent(val)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(item => {
-                            const suggestionDiv = document.createElement("DIV");
-                            suggestionDiv.innerHTML = typeof item === 'string' ? item : item.display || item.name;
-                            suggestionDiv.addEventListener("click", function() {
-                                inp.value = typeof item === 'string' ? item : item.name || item.display;
-                                closeAllLists();
-                            });
-                            listContainer.appendChild(suggestionDiv);
-                        });
-                    })
-                    .catch(error => console.error('Error:', error));
-            });
-            
-            inp.addEventListener("keydown", function(e) {
-                let x = document.getElementById(this.id + "-autocomplete-list");
-                if (x) x = x.getElementsByTagName("div");
-                if (e.keyCode == 40) {
-                    currentFocus++;
-                    addActive(x);
-                } else if (e.keyCode == 38) {
-                    currentFocus--;
-                    addActive(x);
-                } else if (e.keyCode == 13) {
-                    e.preventDefault();
-                    if (currentFocus > -1 && x) x[currentFocus].click();
-                }
-            });
-            
-            function addActive(x) {
-                if (!x) return false;
-                removeActive(x);
-                if (currentFocus >= x.length) currentFocus = 0;
-                if (currentFocus < 0) currentFocus = (x.length - 1);
-                x[currentFocus].classList.add("autocomplete-active");
-            }
-            
-            function removeActive(x) {
-                for (let i = 0; i < x.length; i++) {
-                    x[i].classList.remove("autocomplete-active");
-                }
-            }
-            
+            // Clear any existing autocomplete items and loading indicators
             function closeAllLists(elmnt) {
-                const items = document.getElementsByClassName("autocomplete-items");
-                for (let i = 0; i < items.length; i++) {
-                    if (elmnt != items[i] && elmnt != inp) {
+                const items = document.querySelectorAll(".autocomplete-items, .autocomplete-loading");
+                for (let i = items.length - 1; i >= 0; i--) {
+                    if (elmnt !== items[i] && elmnt !== inp) {
                         items[i].parentNode.removeChild(items[i]);
                     }
                 }
             }
             
+            // Add active class to selected item
+            function addActive(items) {
+                if (!items) return false;
+                removeActive(items);
+                if (currentFocus >= items.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = items.length - 1;
+                items[currentFocus].classList.add("autocomplete-active");
+            }
+            
+            // Remove active class from all items
+            function removeActive(items) {
+                for (let i = 0; i < items.length; i++) {
+                    items[i].classList.remove("autocomplete-active");
+                }
+            }
+            
+            // Handle input with debouncing
+            inp.addEventListener("input", function() {
+                clearTimeout(debounceTimer);
+                const val = this.value.trim();
+                
+                closeAllLists();
+                if (!val || val.length < 2) return;
+                
+                // Show loading indicator
+                closeAllLists();
+                const loadingDiv = document.createElement("DIV");
+                loadingDiv.className = "autocomplete-loading";
+                loadingDiv.innerHTML = "Loading...";
+                this.parentNode.appendChild(loadingDiv);
+                
+                debounceTimer = setTimeout(() => {
+                    fetch(`${endpoint}?q=${encodeURIComponent(val)}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            closeAllLists();
+                            
+                            if (!data || data.length === 0) {
+                                const noResultsDiv = document.createElement("DIV");
+                                noResultsDiv.className = "autocomplete-items";
+                                noResultsDiv.innerHTML = "<div class='autocomplete-item'>No results found</div>";
+                                inp.parentNode.appendChild(noResultsDiv);
+                                return;
+                            }
+                            
+                            const listContainer = document.createElement("DIV");
+                            listContainer.className = "autocomplete-items";
+                            this.parentNode.appendChild(listContainer);
+                            
+                            data.forEach((item, index) => {
+                                const suggestionDiv = document.createElement("DIV");
+                                suggestionDiv.className = "autocomplete-item";
+                                
+                                let displayText, value;
+                                if (typeof item === 'string') {
+                                    displayText = item;
+                                    value = item;
+                                } else {
+                                    displayText = item.display || item.name || `${item.number} - ${item.name}`;
+                                    value = item.name || item.display || item.number;
+                                }
+                                
+                                suggestionDiv.innerHTML = displayText;
+                                suggestionDiv.addEventListener("click", function() {
+                                    inp.value = displayText; // Use display text which includes both name and number
+                                    closeAllLists();
+                                    
+                                    // Trigger change event for form validation
+                                    const event = new Event('change', { bubbles: true });
+                                    inp.dispatchEvent(event);
+                                });
+                                
+                                listContainer.appendChild(suggestionDiv);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Autocomplete error:', error);
+                            closeAllLists();
+                            
+                            const errorDiv = document.createElement("DIV");
+                            errorDiv.className = "autocomplete-items";
+                            errorDiv.innerHTML = "<div class='autocomplete-item autocomplete-error'>Error loading suggestions</div>";
+                            inp.parentNode.appendChild(errorDiv);
+                            
+                            // Auto-hide error after 3 seconds
+                            setTimeout(() => closeAllLists(), 3000);
+                        });
+                }, 300); // 300ms debounce delay
+            });
+            
+            // Handle keyboard navigation
+            inp.addEventListener("keydown", function(e) {
+                let items = this.parentNode.querySelectorAll(".autocomplete-items > div");
+                
+                if (e.keyCode === 40) { // Arrow down
+                    e.preventDefault();
+                    currentFocus++;
+                    addActive(items);
+                } else if (e.keyCode === 38) { // Arrow up
+                    e.preventDefault();
+                    currentFocus--;
+                    addActive(items);
+                } else if (e.keyCode === 13) { // Enter
+                    e.preventDefault();
+                    if (currentFocus > -1 && items[currentFocus]) {
+                        items[currentFocus].click();
+                    }
+                } else if (e.keyCode === 27) { // Escape
+                    closeAllLists();
+                }
+            });
+            
+            // Close lists when clicking outside
             document.addEventListener("click", function(e) {
                 closeAllLists(e.target);
             });
         }
         
-        // Initialize autocomplete for source and destination stations
+        // Initialize autocomplete for all relevant fields
         document.addEventListener("DOMContentLoaded", function() {
-            const sourceInput = document.getElementById("{{ form.source_station.id_for_label }}");
-            const destinationInput = document.getElementById("{{ form.destination_station.id_for_label }}");
-            const trainInput = document.getElementById("{{ form.train_number.id_for_label }}");
+            // Get actual field elements
+            const trainNameField = document.querySelector('input[name="train_name_number"]');
+            const sourceStationField = document.querySelector('input[name="source_station"]');
+            const destinationStationField = document.querySelector('input[name="destination_station"]');
             
-            autocomplete(sourceInput, [], '/booking/autocomplete/stations/');
-            autocomplete(destinationInput, [], '/booking/autocomplete/stations/');
-            autocomplete(trainInput, [], '/booking/autocomplete/trains/');
+            if (trainNameField) {
+                autocomplete(trainNameField, '/dashboard/autocomplete/trains/', 'train');
+            }
+            
+            if (sourceStationField) {
+                autocomplete(sourceStationField, '/dashboard/autocomplete/stations/', 'station');
+            }
+            
+            if (destinationStationField) {
+                autocomplete(destinationStationField, '/dashboard/autocomplete/stations/', 'station');
+            }
+            
+            // Debug: Log if fields are found
+            console.log('Autocomplete initialized for:', {
+                train: !!trainNameField,
+                source: !!sourceStationField,
+                destination: !!destinationStationField
+            });
         });
     </script>
 </body>

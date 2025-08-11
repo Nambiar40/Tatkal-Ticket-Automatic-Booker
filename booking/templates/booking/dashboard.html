@@ -3,21 +3,22 @@
 <html>
 <head>
     <title>Dashboard</title>
+    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
     <link rel="stylesheet" href="{% static 'booking/status.css' %}">
     <script src="{% static 'booking/dashboard.js' %}"></script>
 </head>
 <body>
     <h2>Your Booking Tasks</h2>
-
+    
     <table border="1" cellpadding="10">
         <tr>
-            <th>Train Number</th>
+            <th>Train Name & Number</th>
             <th>Booking Time</th>
             <th>Status</th>
         </tr>
         {% for task in tasks %}
         <tr>
-            <td>{{ task.train_number }}</td>
+            <td>{{ task.train_name_number }}</td>
             <td>{{ task.booking_time }}</td>
             <td>
                 {% if task.status == "Completed" %}

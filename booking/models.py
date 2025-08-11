@@ -5,6 +5,7 @@ class BookingTask(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     
     # Train details
+    train_name_number = models.CharField(max_length=120, help_text="e.g., Rajdhani Express 12345", default="Unknown Train 00000")
     train_number = models.CharField(max_length=10, default="00000")
     train_name = models.CharField(max_length=100, default="Unknown Train")
     source_station = models.CharField(max_length=50, default="Unknown Source")

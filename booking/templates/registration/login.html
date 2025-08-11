@@ -2,21 +2,25 @@
 <html>
 <head>
     <title>Login - Tatkal Auto Booker</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
+    <div class="form-container">
+        <h2>Login</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Login</button>
+        </form>
 
-    <p>Don't have an account? <a href="{% url 'signup' %}">Sign up here</a></p>
+        <p>Don't have an account? <a href="{% url 'signup' %}">Sign up here</a></p>
 
-    {% if form.errors %}
-        <div style="color: red;">
-            <strong>Login failed:</strong> Please check your username and password.
-        </div>
-    {% endif %}
+        {% if form.errors %}
+            <div class="error-message">
+                <strong>Login failed:</strong> Please check your username and password.
+            </div>
+        {% endif %}
+    </div>
 </body>
 </html>

@@ -31,7 +31,7 @@ def execute_booking(task_id):
 
         c.setFont("Helvetica", 14)
         c.drawString(100, 750, f"PNR Number: {booking.pnr_number}")
-        c.drawString(100, 720, f"Train: {booking.train_number} - {booking.train_name}")
+        c.drawString(100, 720, f"Train: {booking.train_name_number}")
         c.drawString(100, 690, f"From: {booking.source_station} To: {booking.destination_station}")
         c.drawString(100, 660, f"Journey Date: {booking.journey_date.strftime('%Y-%m-%d')}")
         c.drawString(100, 630, f"Passenger: {booking.passenger_name} ({booking.passenger_gender}, {booking.passenger_age} yrs)")

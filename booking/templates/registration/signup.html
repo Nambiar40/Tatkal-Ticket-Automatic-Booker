@@ -1,7 +1,19 @@
-<h2>Sign Up</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Register</button>
-</form>
-<p>Already have an account? <a href="/accounts/login/">Login</a></p>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - Tatkal Auto Booker</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
+</head>
+<body>
+    <div class="form-container">
+        <h2>Sign Up</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="/accounts/login/">Login</a></p>
+    </div>
+</body>
+</html>
