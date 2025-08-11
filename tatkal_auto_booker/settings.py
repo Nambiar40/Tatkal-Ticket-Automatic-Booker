@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # your apps here...
+    'booking'
 ]
 
 ROOT_URLCONF = 'tatkal_auto_booker.urls'
