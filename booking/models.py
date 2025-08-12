@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class BookingTask(models.Model):
+class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     
     # Train details
@@ -43,6 +43,43 @@ class BookingTask(models.Model):
 
     # Ticket PDF
     ticket_pdf = models.FileField(upload_to="tickets/", blank=True, null=True)
+    ticket_pdf_url = models.URLField(blank=True, null=True)
+    
+    # Auto-deletion fields
+    auto_delete_enabled = models.BooleanField(default=True)
+    retention_days = models.PositiveIntegerField(default=30)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.train_number} - {self.passenger_name} ({self.journey_date})"
+    
+    def is_deletable(self):
+        """Check if this booking can be auto-deleted"""
+        if not self.auto_delete_enabled:
+            return False
+        
+        if self.status != "Completed":
+            return False
+            
+        if not self.booking_time:
+            return False
+            
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        retention_date = self.booking_time + timedelta(days=self.retention_days)
+        return timezone.now() >= retention_date
+    
+    def delete_with_files(self):
+        """Delete booking and associated files"""
+        if self.ticket_pdf:
+            try:
+                import os
+                from django.conf import settings
+                file_path = os.path.join(settings.MEDIA_ROOT, str(self.ticket_pdf))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error deleting file {self.ticket_pdf}: {e}")
+        
+        self.delete()

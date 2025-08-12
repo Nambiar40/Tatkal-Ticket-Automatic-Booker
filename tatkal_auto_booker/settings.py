@@ -39,7 +39,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -77,6 +77,12 @@ INSTALLED_APPS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # -------------------------------------------------
+# TIME ZONE CONFIGURATION
+# -------------------------------------------------
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True
+
+# -------------------------------------------------
 # URLS / TEMPLATES / WSGI
 # -------------------------------------------------
 ROOT_URLCONF = 'tatkal_auto_booker.urls'
@@ -104,3 +110,30 @@ WSGI_APPLICATION = 'tatkal_auto_booker.wsgi.application'
 # -------------------------------------------------
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+# -------------------------------------------------
+# CELERY CONFIGURATION
+# -------------------------------------------------
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# Celery Beat settings
+CELERY_BEAT_SCHEDULE = {
+    'update-scheduled-bookings-every-minute': {
+        'task': 'booking.tasks.update_scheduled_bookings',
+        'schedule': 60.0,  # every 60 seconds
+    },
+    'auto-delete-old-bookings-daily': {
+        'task': 'booking.tasks.auto_delete_old_bookings',
+        'schedule': 86400.0,  # every 24 hours
+    },
+    'cleanup-orphaned-files-weekly': {
+        'task': 'booking.tasks.cleanup_orphaned_files',
+        'schedule': 604800.0,  # every 7 days
+    },
+}
+
+# Auto-deletion settings
+AUTO_DELETE_RETENTION_DAYS = config('AUTO_DELETE_RETENTION_DAYS', default=30, cast=int)
+AUTO_DELETE_ENABLED = config('AUTO_DELETE_ENABLED', default=True, cast=bool)

@@ -1,83 +1,78 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.utils import timezone
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import BookingTask
-from .forms import BookingTaskForm
-
-# Sample data for autocomplete
-INDIAN_STATIONS = [
-    "Mumbai Central", "Mumbai CST", "Mumbai Bandra", "Mumbai Dadar",
-    "Delhi Junction", "New Delhi", "Delhi Cantt", "Delhi Sarai Rohilla",
-    "Kolkata Howrah", "Kolkata Sealdah", "Kolkata Shalimar",
-    "Chennai Central", "Chennai Egmore", "Chennai Beach",
-    "Bangalore City", "Bangalore Cantt", "Bangalore East",
-    "Hyderabad Deccan", "Hyderabad Lingampally", "Secunderabad",
-    "Ahmedabad Junction", "Pune Junction", "Jaipur Junction",
-    "Lucknow Charbagh", "Patna Junction", "Bhopal Junction",
-    "Thiruvananthapuram Central", "Kochi Ernakulam", "Guwahati"
-]
-
-INDIAN_TRAINS = [
-    {"number": "12001", "name": "Habibganj New Delhi Shatabdi Express"},
-    {"number": "12002", "name": "New Delhi Habibganj Shatabdi Express"},
-    {"number": "12137", "name": "Punjab Mail"},
-    {"number": "12138", "name": "Punjab Mail"},
-    {"number": "12221", "name": "Pune Howrah Duronto Express"},
-    {"number": "12222", "name": "Howrah Pune Duronto Express"},
-    {"number": "12301", "name": "Howrah New Delhi Rajdhani Express"},
-    {"number": "12302", "name": "New Delhi Howrah Rajdhani Express"},
-    {"number": "12621", "name": "Tamil Nadu Express"},
-    {"number": "12622", "name": "Tamil Nadu Express"}
-]
+from django.contrib.auth.decorators import login_required
+from .models import Booking
+from .forms import BookingForm
+from .tasks import execute_booking
 
 @login_required
 def dashboard(request):
-    tasks = BookingTask.objects.filter(user=request.user).order_by('-id')
+    """Display all booking tasks for the logged-in user"""
+    tasks = Booking.objects.filter(user=request.user).order_by('-booking_time')
     return render(request, 'booking/dashboard.html', {'tasks': tasks})
 
 @login_required
 def add_task(request):
-    if request.method == 'POST':
-        form = BookingTaskForm(request.POST)
+    """Add a new booking task"""
+    if request.method == "POST":
+        form = BookingForm(request.POST)
         if form.is_valid():
-            task = form.save(commit=False)
-            task.user = request.user
-            task.save()
-            return redirect('dashboard')
+            booking = form.save(commit=False)
+            booking.user = request.user
+            booking.status = "Scheduled"
+            booking.save()
+
+            # Schedule execution at booking.booking_time
+            if booking.booking_time > timezone.now():
+                execute_booking.apply_async(
+                    args=[booking.id],
+                    eta=booking.booking_time
+                )
+                print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time}")
+            else:
+                # If the booking time is already past, run immediately
+                execute_booking.delay(booking.id)
+                print(f"[INFO] Booking {booking.id} executed immediately")
+
+            return redirect("dashboard")
     else:
-        form = BookingTaskForm()
-    return render(request, 'booking/add_task.html', {'form': form})
+        form = BookingForm()
 
-@csrf_exempt
+    return render(request, "booking/add_task.html", {"form": form})
+
 def autocomplete_stations(request):
-    """API endpoint for station autocomplete"""
-    query = request.GET.get('q', '').strip()
-    if len(query) < 2:
-        return JsonResponse([], safe=False)
-    
-    filtered_stations = [
-        station for station in INDIAN_STATIONS 
-        if query.lower() in station.lower()
-    ]
-    
-    return JsonResponse(filtered_stations[:10], safe=False)
+    """Autocomplete for station names"""
+    if 'term' in request.GET:
+        term = request.GET.get('term')
+        # For now, return some sample stations
+        stations = [
+            'Mumbai Central', 'Mumbai CST', 'Bandra Terminus', 
+            'Delhi Junction', 'New Delhi', 'Hazrat Nizamuddin',
+            'Kolkata Howrah', 'Kolkata Sealdah', 'Kolkata Shalimar',
+            'Chennai Central', 'Chennai Egmore', 'Bangalore City',
+            'Pune Junction', 'Ahmedabad Junction', 'Jaipur Junction'
+        ]
+        filtered_stations = [s for s in stations if term.lower() in s.lower()]
+        return JsonResponse(filtered_stations[:10], safe=False)
+    return JsonResponse([], safe=False)
 
-@csrf_exempt
 def autocomplete_trains(request):
-    """API endpoint for train autocomplete"""
-    query = request.GET.get('q', '').strip()
-    if len(query) < 2:
-        return JsonResponse([], safe=False)
-    
-    filtered_trains = []
-    for train in INDIAN_TRAINS:
-        if (query.lower() in train['name'].lower() or 
-            query.lower() in train['number'].lower()):
-            filtered_trains.append({
-                'number': train['number'],
-                'name': train['name'],
-                'display': f"{train['number']} - {train['name']}"
-            })
-    
-    return JsonResponse(filtered_trains[:10], safe=False)
+    """Autocomplete for train names and numbers"""
+    if 'term' in request.GET:
+        term = request.GET.get('term')
+        # For now, return some sample trains
+        trains = [
+            'Rajdhani Express 12345', 'Shatabdi Express 12001', 
+            'Duronto Express 12221', 'Garib Rath 12111',
+            'Jan Shatabdi 12051', 'Intercity Express 11015',
+            'Superfast Express 12137', 'Mail Express 11033',
+            'Passenger 56003', 'Express 12625'
+        ]
+        filtered_trains = [t for t in trains if term.lower() in t.lower()]
+        return JsonResponse(filtered_trains[:10], safe=False)
+    return JsonResponse([], safe=False)
+
+def create_booking(request):
+    """Legacy create booking view - redirects to add_task"""
+    return redirect('add_task')

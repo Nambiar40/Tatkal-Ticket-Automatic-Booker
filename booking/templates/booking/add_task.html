@@ -154,7 +154,7 @@
                 this.parentNode.appendChild(loadingDiv);
                 
                 debounceTimer = setTimeout(() => {
-                    fetch(`${endpoint}?q=${encodeURIComponent(val)}`)
+                    fetch(`${endpoint}?term=${encodeURIComponent(val)}`)
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -191,7 +191,7 @@
                                 
                                 suggestionDiv.innerHTML = displayText;
                                 suggestionDiv.addEventListener("click", function() {
-                                    inp.value = displayText; // Use display text which includes both name and number
+                                    inp.value = displayText;
                                     closeAllLists();
                                     
                                     // Trigger change event for form validation

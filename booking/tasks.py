@@ -1,49 +1,57 @@
-from celery import shared_task
-from .models import BookingTask
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-import random
 import os
 from django.conf import settings
+from .models import Booking
+from xhtml2pdf import pisa
+from celery import shared_task
 
-@shared_task
-def execute_booking(task_id):
-    try:
-        booking = BookingTask.objects.get(id=task_id)
+def html_to_pdf(source_html, output_filename):
+    """Convert HTML string to PDF file."""
+    with open(output_filename, "wb") as pdf_file:
+        pisa.CreatePDF(source_html, dest=pdf_file)
 
-        # Simulate booking process
-        booking.status = "Completed"
-        
-        # Generate mock PNR and seat details
-        booking.pnr_number = str(random.randint(1000000000, 9999999999))
-        booking.seat_number = f"S{random.randint(1, 12)}-{random.randint(1, 80)}"
-        booking.coach_number = f"C{random.randint(1, 18)}"
-        booking.save()
+def execute_booking():
+    bookings = Booking.objects.all()
 
-        # Generate PDF ticket
-        pdf_filename = f"ticket_{booking.id}.pdf"
-        pdf_path = os.path.join(settings.MEDIA_ROOT, "tickets", pdf_filename)
-        os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+    for booking in bookings:
+        ticket_html = f"""
+        <html>
+        <head><title>Train Ticket - {booking.train_number} - {booking.train_name}</title></head>
+        <body style="font-family: Arial, sans-serif; margin: 20px;">
+            <div style="border: 2px solid #000; padding: 20px; max-width: 600px;">
+                <h1 style="text-align: center; color: #0066cc;">Train Ticket</h1>
+                <hr>
+                <p><strong>Booking ID:</strong> {booking.id}</p>
+                <p><strong>Train:</strong> {booking.train_number} - {booking.train_name}</p>
+                <p><strong>Passenger:</strong> {booking.passenger_name}</p>
+                <p><strong>Age:</strong> {booking.passenger_age}</p>
+                <p><strong>Gender:</strong> {booking.passenger_gender}</p>
+                <p><strong>Date:</strong> {booking.date}</p>
+                <p><strong>From:</strong> {booking.from_station}</p>
+                <p><strong>To:</strong> {booking.to_station}</p>
+                <p><strong>Class:</strong> {booking.travel_class}</p>
+                <p><strong>Coach:</strong> {booking.coach}</p>
+                <p><strong>Seat:</strong> {booking.seat}</p>
+                <p><strong>PNR:</strong> {booking.pnr}</p>
+                <hr>
+                <p style="text-align: center; font-size: 12px; color: #666;">
+                    Generated on {booking.generated_at.strftime('%Y-%m-%d %H:%M:%S')}
+                </p>
+            </div>
+        </body>
+        </html>
+        """
 
-        c = canvas.Canvas(pdf_path, pagesize=A4)
-        c.setFont("Helvetica-Bold", 20)
-        c.drawString(200, 800, "Tatkal Auto Booker - E-Ticket")
+        # Save HTML file
+        html_filename = f"ticket_{booking.id}_{booking.train_number} - {booking.train_name}_{booking.generated_at.strftime('%Y%m%d_%H%M%S')}.html"
+        html_path = os.path.join(settings.MEDIA_ROOT, 'tickets', html_filename)
+        os.makedirs(os.path.dirname(html_path), exist_ok=True)
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(ticket_html)
 
-        c.setFont("Helvetica", 14)
-        c.drawString(100, 750, f"PNR Number: {booking.pnr_number}")
-        c.drawString(100, 720, f"Train: {booking.train_name_number}")
-        c.drawString(100, 690, f"From: {booking.source_station} To: {booking.destination_station}")
-        c.drawString(100, 660, f"Journey Date: {booking.journey_date.strftime('%Y-%m-%d')}")
-        c.drawString(100, 630, f"Passenger: {booking.passenger_name} ({booking.passenger_gender}, {booking.passenger_age} yrs)")
-        c.drawString(100, 600, f"Class: {booking.class_type}, Coach: {booking.coach_number}, Seat: {booking.seat_number}")
+        # Save PDF file
+        pdf_filename = html_filename.replace(".html", ".pdf")
+        pdf_path = os.path.join(settings.MEDIA_ROOT, 'tickets', pdf_filename)
+        html_to_pdf(ticket_html, pdf_path)
 
-        c.showPage()
-        c.save()
-
-        booking.ticket_pdf = f"tickets/{pdf_filename}"
-        booking.save()
-
-        print(f"[TEST] Booking for task ID {task_id} completed successfully. Ticket saved at {pdf_path}")
-
-    except BookingTask.DoesNotExist:
-        print(f"[ERROR] Booking task {task_id} not found.")
+        print(f"Saved ticket HTML: {html_path}")
+        print(f"Saved ticket PDF: {pdf_path}")
