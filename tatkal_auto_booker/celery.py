@@ -9,7 +9,7 @@ app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
     'check-and-run-bookings-every-minute': {
-        'task': 'booking.tasks.update_scheduled_bookings',
+        'task': 'booking.tasks.execute_booking', 
         'schedule': crontab(minute='*'),  # every 1 min
     },
 }

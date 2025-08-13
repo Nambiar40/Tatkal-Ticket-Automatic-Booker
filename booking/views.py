@@ -21,17 +21,37 @@ def add_task(request):
             booking = form.save(commit=False)
             booking.user = request.user
             booking.status = "Scheduled"
+            
+            # Parse train name and number from train_name_number field
+            train_info = booking.train_name_number
+            if train_info and train_info != "Unknown Train 00000":
+                # Split by space and take last part as train number
+                parts = train_info.split()
+                if len(parts) >= 2:
+                    # Last part should be train number
+                    booking.train_number = parts[-1]
+                    # Everything else is train name
+                    booking.train_name = ' '.join(parts[:-1])
+                else:
+                    # If only one part, use it as train name
+                    booking.train_name = train_info
+                    booking.train_number = "00000"
+            else:
+                # Use defaults if no train info provided
+                booking.train_name = "Unknown Train"
+                booking.train_number = "00000"
+            
             booking.save()
 
             # Schedule execution at booking.booking_time
-            if booking.booking_time > timezone.now():
+            if booking.booking_time and booking.booking_time > timezone.now():
                 execute_booking.apply_async(
                     args=[booking.id],
                     eta=booking.booking_time
                 )
                 print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time}")
             else:
-                # If the booking time is already past, run immediately
+                # If the booking time is already past or not set, run immediately
                 execute_booking.delay(booking.id)
                 print(f"[INFO] Booking {booking.id} executed immediately")
 
@@ -41,11 +61,11 @@ def add_task(request):
 
     return render(request, "booking/add_task.html", {"form": form})
 
+
 def autocomplete_stations(request):
     """Autocomplete for station names"""
     if 'term' in request.GET:
         term = request.GET.get('term')
-        # For now, return some sample stations
         stations = [
             'Mumbai Central', 'Mumbai CST', 'Bandra Terminus', 
             'Delhi Junction', 'New Delhi', 'Hazrat Nizamuddin',
@@ -61,7 +81,6 @@ def autocomplete_trains(request):
     """Autocomplete for train names and numbers"""
     if 'term' in request.GET:
         term = request.GET.get('term')
-        # For now, return some sample trains
         trains = [
             'Rajdhani Express 12345', 'Shatabdi Express 12001', 
             'Duronto Express 12221', 'Garib Rath 12111',

@@ -24,7 +24,13 @@ class Booking(models.Model):
 
     # Booking info
     booking_time = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, default="Scheduled")
+    STATUS_CHOICES = [
+        ('Scheduled', 'Scheduled'),
+        ('Processing', 'Processing'),
+        ('Completed', 'Completed'),
+        ('Failed', 'Failed')
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Scheduled')
 
     # Ticket info (auto-filled after booking)
     pnr_number = models.CharField(max_length=12, blank=True, null=True)
