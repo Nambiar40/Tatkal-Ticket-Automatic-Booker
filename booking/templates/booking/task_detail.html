@@ -21,6 +21,7 @@
                         <strong>Booking Time:</strong> {{ task.booking_time }}<br>
                         <strong>Class:</strong> {{ task.class_type }}<br>
                         <strong>Coach:</strong> {{ task.coach_number }}<br>
+                        <strong>Seat Number:</strong> {{ task.seat_number|default:"Not assigned" }}<br>
                         <strong>Status:</strong> 
                         <span class="badge badge-{% if task.status == 'completed' %}success{% elif task.status == 'failed' %}danger{% else %}warning{% endif %}">
                             {{ task.get_status_display }}
