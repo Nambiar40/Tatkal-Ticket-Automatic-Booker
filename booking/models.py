@@ -13,15 +13,6 @@ class Booking(models.Model):
 
     journey_date = models.DateField(null=True, blank=True)
 
-    # Passenger details
-    passenger_name = models.CharField(max_length=100, default="Test Passenger")
-    passenger_age = models.PositiveIntegerField(default=0)
-    passenger_gender = models.CharField(
-        max_length=10,
-        choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
-        default='Male'
-    )
-
     # Booking info
     booking_time = models.DateTimeField(null=True, blank=True)
     STATUS_CHOICES = [
@@ -57,35 +48,17 @@ class Booking(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.train_number} - {self.passenger_name} ({self.journey_date})"
-    
-    def is_deletable(self):
-        """Check if this booking can be auto-deleted"""
-        if not self.auto_delete_enabled:
-            return False
-        
-        if self.status != "Completed":
-            return False
-            
-        if not self.booking_time:
-            return False
-            
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        retention_date = self.booking_time + timedelta(days=self.retention_days)
-        return timezone.now() >= retention_date
-    
-    def delete_with_files(self):
-        """Delete booking and associated files"""
-        if self.ticket_pdf:
-            try:
-                import os
-                from django.conf import settings
-                file_path = os.path.join(settings.MEDIA_ROOT, str(self.ticket_pdf))
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception as e:
-                print(f"Error deleting file {self.ticket_pdf}: {e}")
-        
-        self.delete()
+        return f"{self.train_number} - {self.user.username} ({self.journey_date})"
+
+class Passenger(models.Model):
+    booking = models.ForeignKey(Booking, related_name='passengers', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    age = models.PositiveIntegerField()
+    gender = models.CharField(
+        max_length=10,
+        choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
+        default='Male'
+    )
+
+    def __str__(self):
+        return self.name

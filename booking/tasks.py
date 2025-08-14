@@ -147,3 +147,87 @@ def update_scheduled_bookings():
     
     logger.info(f"Updated {scheduled_bookings.count()} scheduled bookings")
     return f"Processed {scheduled_bookings.count()} scheduled bookings"
+
+@shared_task
+def auto_delete_old_bookings():
+    """Automatically delete old completed bookings based on retention policy."""
+    from django.utils import timezone
+    
+    logger.info("Starting auto-deletion of old completed bookings")
+    
+    # Get all completed bookings that are eligible for deletion
+    completed_bookings = Booking.objects.filter(status='Completed')
+    
+    deleted_count = 0
+    skipped_count = 0
+    
+    for booking in completed_bookings:
+        if booking.is_deletable():
+            try:
+                logger.info(f"Deleting booking {booking.id} - {booking.train_name_number}")
+                booking.delete_with_files()
+                deleted_count += 1
+            except Exception as e:
+                logger.error(f"Error deleting booking {booking.id}: {str(e)}")
+                skipped_count += 1
+        else:
+            skipped_count += 1
+    
+    logger.info(f"Auto-deletion completed: {deleted_count} deleted, {skipped_count} skipped")
+    return f"Auto-deleted {deleted_count} old bookings, skipped {skipped_count}"
+
+@shared_task
+def cleanup_orphaned_files():
+    """Clean up orphaned ticket files that don't have corresponding bookings."""
+    import os
+    import glob
+    
+    logger.info("Starting cleanup of orphaned ticket files")
+    
+    # Get all ticket files in the media directory
+    ticket_dir = os.path.join(settings.MEDIA_ROOT, 'tickets')
+    if not os.path.exists(ticket_dir):
+        logger.info("Ticket directory does not exist")
+        return
+    
+    # Get all existing booking PDFs
+    existing_pdfs = set()
+    for booking in Booking.objects.filter(ticket_pdf__isnull=False):
+        if booking.ticket_pdf:
+            existing_pdfs.add(str(booking.ticket_pdf))
+    
+    # Find all PDF files in the tickets directory
+    orphaned_files = []
+    for file_path in glob.glob(os.path.join(ticket_dir, "*.pdf")):
+        relative_path = os.path.relpath(file_path, settings.MEDIA_ROOT)
+        if relative_path not in existing_pdfs:
+            orphaned_files.append(file_path)
+    
+    # Delete orphaned files
+    deleted_files = 0
+    for file_path in orphaned_files:
+        try:
+            os.remove(file_path)
+            logger.info(f"Deleted orphaned file: {file_path}")
+            deleted_files += 1
+        except Exception as e:
+            logger.error(f"Error deleting file {file_path}: {str(e)}")
+    
+    # Also clean up HTML files
+    orphaned_html_files = []
+    for file_path in glob.glob(os.path.join(ticket_dir, "*.html")):
+        # Check if corresponding PDF exists
+        pdf_path = file_path.replace(".html", ".pdf")
+        if not os.path.exists(pdf_path):
+            orphaned_html_files.append(file_path)
+    
+    for file_path in orphaned_html_files:
+        try:
+            os.remove(file_path)
+            logger.info(f"Deleted orphaned HTML file: {file_path}")
+            deleted_files += 1
+        except Exception as e:
+            logger.error(f"Error deleting HTML file {file_path}: {str(e)}")
+    
+    logger.info(f"Cleanup completed: {deleted_files} orphaned files deleted")
+    return f"Cleaned up {deleted_files} orphaned files"

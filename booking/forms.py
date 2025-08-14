@@ -1,17 +1,15 @@
 from django import forms
-from .models import Booking
+from django.forms import inlineformset_factory
+from .models import Booking, Passenger
 
 class BookingForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = [
             "train_name_number",
-            "passenger_name",
-            "passenger_age",
-            "passenger_gender",
-            "journey_date",
             "source_station",
             "destination_station",
+            "journey_date",
             "class_type",
             "booking_time"
         ]
@@ -26,3 +24,34 @@ class BookingForm(forms.ModelForm):
         if booking_time < timezone.now():
             raise forms.ValidationError("Booking time must be in the future.")
         return booking_time
+
+class PassengerForm(forms.ModelForm):
+    class Meta:
+        model = Passenger
+        fields = ['name', 'age', 'gender']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter passenger name'
+            }),
+            'age': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Age',
+                'min': '1',
+                'max': '120'
+            }),
+            'gender': forms.Select(attrs={
+                'class': 'form-control'
+            })
+        }
+
+# Create formset for passengers
+PassengerFormSet = inlineformset_factory(
+    Booking,
+    Passenger,
+    form=PassengerForm,
+    extra=1,
+    can_delete=True,
+    min_num=1,
+    validate_min=True
+)

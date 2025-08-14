@@ -2,42 +2,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
+    <title>Dashboard - Tatkal Auto Booker</title>
+    <link rel="stylesheet" href="{% static 'booking/enhanced.css' %}">
     <link rel="stylesheet" href="{% static 'booking/status.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="{% static 'booking/dashboard.js' %}"></script>
 </head>
 <body>
-    <h2>Your Booking Tasks</h2>
-    
-    <table border="1" cellpadding="10">
-        <tr>
-            <th>Train Name & Number</th>
-            <th>Booking Time</th>
-            <th>Status</th>
-        </tr>
-        {% for task in tasks %}
-        <tr>
-            <td>{{ task.train_name_number }}</td>
-            <td>{{ task.booking_time }}</td>
-            <td>
-                {% if task.status == "Completed" %}
-                    <span class="status-completed">{{ task.status }}</span>
-                {% elif task.status == "Scheduled" %}
-                    <span class="status-scheduled">{{ task.status }}</span>
-                {% else %}
-                    <span class="status-failed">{{ task.status }}</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">No booking tasks found.</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Your Booking Tasks</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Manage and monitor your train booking tasks
+            </p>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Train Name & Number</th>
+                        <th>Booking Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>
+                            <strong>{{ task.train_name_number }}</strong>
+                            <br>
+                            <small style="color: var(--text-secondary);">
+                                {{ task.source_station }} → {{ task.destination_station }}
+                            </small>
+                        </td>
+                        <td>
+                            <strong>{{ task.booking_time|date:"M d, Y" }}</strong>
+                            <br>
+                            <small style="color: var(--text-secondary);">
+                                {{ task.booking_time|time:"H:i" }}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ task.status|lower }}">
+                                {{ task.status }}
+                            </span>
+                        </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-primary">
+                                View Details
+                            </a>
+                            {% if task.ticket_pdf %}
+                            <a href="{{ task.ticket_pdf.url }}" target="_blank" class="btn btn-sm btn-success" download>
+                                Download PDF
+                            </a>
+                            {% elif task.ticket_pdf_url %}
+                            <a href="{{ task.ticket_pdf_url }}" target="_blank" class="btn btn-sm btn-success" download>
+                                Download PDF
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px;">
+                            <div style="color: var(--text-secondary);">
+                                <h3>No booking tasks found</h3>
+                                <p>Get started by creating your first booking task</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <br>
-    <a href="{% url 'add_task' %}">Add New Booking Task</a>
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="{% url 'add_task' %}" class="btn btn-lg btn-primary">
+                Add New Booking Task
+            </a>
+        </div>
+    </div>
 </body>
 </html>

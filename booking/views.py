@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import Booking
-from .forms import BookingForm
+from .models import Booking, Passenger
+from .forms import BookingForm, PassengerFormSet
 from .tasks import execute_booking
 
 @login_required
@@ -14,10 +14,12 @@ def dashboard(request):
 
 @login_required
 def add_task(request):
-    """Add a new booking task"""
+    """Add a new booking task with passenger list"""
     if request.method == "POST":
         form = BookingForm(request.POST)
-        if form.is_valid():
+        passenger_formset = PassengerFormSet(request.POST, prefix='passengers')
+        
+        if form.is_valid() and passenger_formset.is_valid():
             booking = form.save(commit=False)
             booking.user = request.user
             booking.status = "Scheduled"
@@ -25,23 +27,24 @@ def add_task(request):
             # Parse train name and number from train_name_number field
             train_info = booking.train_name_number
             if train_info and train_info != "Unknown Train 00000":
-                # Split by space and take last part as train number
                 parts = train_info.split()
                 if len(parts) >= 2:
-                    # Last part should be train number
                     booking.train_number = parts[-1]
-                    # Everything else is train name
                     booking.train_name = ' '.join(parts[:-1])
                 else:
-                    # If only one part, use it as train name
                     booking.train_name = train_info
                     booking.train_number = "00000"
             else:
-                # Use defaults if no train info provided
                 booking.train_name = "Unknown Train"
                 booking.train_number = "00000"
             
             booking.save()
+            
+            # Save passengers
+            passengers = passenger_formset.save(commit=False)
+            for passenger in passengers:
+                passenger.booking = booking
+                passenger.save()
 
             # Schedule execution at booking.booking_time
             if booking.booking_time and booking.booking_time > timezone.now():
@@ -51,15 +54,18 @@ def add_task(request):
                 )
                 print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time}")
             else:
-                # If the booking time is already past or not set, run immediately
                 execute_booking.delay(booking.id)
                 print(f"[INFO] Booking {booking.id} executed immediately")
 
             return redirect("dashboard")
     else:
         form = BookingForm()
+        passenger_formset = PassengerFormSet(prefix='passengers')
 
-    return render(request, "booking/add_task.html", {"form": form})
+    return render(request, "booking/add_task.html", {
+        "form": form,
+        "passenger_formset": passenger_formset
+    })
 
 
 def autocomplete_stations(request):
@@ -95,3 +101,15 @@ def autocomplete_trains(request):
 def create_booking(request):
     """Legacy create booking view - redirects to add_task"""
     return redirect('add_task')
+
+@login_required
+def task_detail(request, task_id):
+    """Display detailed information about a specific booking task."""
+    from django.shortcuts import get_object_or_404
+    
+    task = get_object_or_404(Booking, id=task_id, user=request.user)
+    passengers = task.passengers.all()
+    return render(request, 'booking/task_detail.html', {
+        'task': task,
+        'passengers': passengers
+    })

@@ -1,0 +1,51 @@
+{% extends 'booking/base.html' %}
+{% load static %}
+
+{% block title %}Task Details - Tatkal Auto Booker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Task Details</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ task.train_name }}</h5>
+                    <p class="card-text">
+                        <strong>Train Number:</strong> {{ task.train_number }}<br>
+                        <strong>From:</strong> {{ task.source_station }}<br>
+                        <strong>To:</strong> {{ task.destination_station }}<br>
+                        <strong>Journey Date:</strong> {{ task.journey_date }}<br>
+                        <strong>Booking Time:</strong> {{ task.booking_time }}<br>
+                        <strong>Class:</strong> {{ task.class_type }}<br>
+                        <strong>Coach:</strong> {{ task.coach_number }}<br>
+                        <strong>Status:</strong> 
+                        <span class="badge badge-{% if task.status == 'completed' %}success{% elif task.status == 'failed' %}danger{% else %}warning{% endif %}">
+                            {{ task.get_status_display }}
+                        </span>
+                    </p>
+                    
+                    {% if task.error_message %}
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> {{ task.error_message }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if task.ticket_html %}
+                    <div class="mt-3">
+                        <h6>Ticket Details:</h6>
+                        <a href="{{ task.ticket_html.url }}" target="_blank" class="btn btn-info btn-sm">View Ticket</a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

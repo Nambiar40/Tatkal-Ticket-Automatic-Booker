@@ -4,24 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Booking Task</title>
-    <link rel="stylesheet" href="{% static 'booking/common.css' %}">
+    <title>Add Booking Task - Tatkal Auto Booker</title>
+    <link rel="stylesheet" href="{% static 'booking/enhanced.css' %}">
     <link rel="stylesheet" href="{% static 'booking/autocomplete.css' %}">
+    <style>
+        .passenger-form {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .passenger-form h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .passenger-form .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .passenger-form .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .passenger-form .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .passenger-form .form-group input,
+        .passenger-form .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .passenger-form .form-group input:focus,
+        .passenger-form .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        .remove-passenger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .remove-passenger:hover {
+            background-color: #c82333;
+        }
+        
+        .add-passenger {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .add-passenger:hover {
+            background-color: #218838;
+        }
+        
+        .empty-form {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Add Booking Task</h2>
+    <div class="form-container">
+        <h2>Create New Booking Task</h2>
+        <p class="text-center" style="color: var(--text-secondary); margin-bottom: 2rem;">
+            Fill in the details to schedule your train booking
+        </p>
+        
         <form method="post">
             {% csrf_token %}
             
             {% if form.non_field_errors %}
-                <div class="error-messages">
+                <div class="error-message">
                     {{ form.non_field_errors }}
                 </div>
             {% endif %}
             
             <div class="form-group">
-                <label for="{{ form.train_name_number.id_for_label }}">Train Name & Number:</label>
+                <label for="{{ form.train_name_number.id_for_label }}">Train Name & Number</label>
                 <div class="autocomplete-container">
                     <input type="text" id="{{ form.train_name_number.id_for_label }}" 
                            name="{{ form.train_name_number.name }}" 
@@ -29,90 +115,185 @@
                            autocomplete="off"
                            value="{{ form.train_name_number.value|default:'' }}">
                     {% if form.train_name_number.errors %}
-                        <div class="error">{{ form.train_name_number.errors }}</div>
+                        <div class="form-error">{{ form.train_name_number.errors }}</div>
                     {% endif %}
                     <div id="train-autocomplete-list" class="autocomplete-items"></div>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.source_station.id_for_label }}">Source Station:</label>
+                <label for="{{ form.source_station.id_for_label }}">Source Station</label>
                 <div class="autocomplete-container">
                     <input type="text" id="{{ form.source_station.id_for_label }}" 
                            name="{{ form.source_station.name }}" 
                            placeholder="Type source station..."
-                           autocomplete="off">
+                           autocomplete="off"
+                           value="{{ form.source_station.value|default:'' }}">
                     <div id="source-autocomplete-list" class="autocomplete-items"></div>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.destination_station.id_for_label }}">Destination Station:</label>
+                <label for="{{ form.destination_station.id_for_label }}">Destination Station</label>
                 <div class="autocomplete-container">
                     <input type="text" id="{{ form.destination_station.id_for_label }}" 
                            name="{{ form.destination_station.name }}" 
                            placeholder="Type destination station..."
-                           autocomplete="off">
+                           autocomplete="off"
+                           value="{{ form.destination_station.value|default:'' }}">
                     <div id="destination-autocomplete-list" class="autocomplete-items"></div>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.journey_date.id_for_label }}">Journey Date:</label>
+                <label for="{{ form.journey_date.id_for_label }}">Journey Date</label>
                 <input type="date" id="{{ form.journey_date.id_for_label }}" 
-                       name="{{ form.journey_date.name }}">
+                       name="{{ form.journey_date.name }}"
+                       value="{{ form.journey_date.value|default:'' }}">
             </div>
             
             <div class="form-group">
-                <label for="{{ form.passenger_name.id_for_label }}">Passenger Name:</label>
-                <input type="text" id="{{ form.passenger_name.id_for_label }}" 
-                       name="{{ form.passenger_name.name }}">
-            </div>
-            
-            <div class="form-group">
-                <label for="{{ form.passenger_age.id_for_label }}">Passenger Age:</label>
-                <input type="number" id="{{ form.passenger_age.id_for_label }}" 
-                       name="{{ form.passenger_age.name }}" min="1" max="120">
-            </div>
-            
-            <div class="form-group">
-                <label for="{{ form.passenger_gender.id_for_label }}">Gender:</label>
-                <select id="{{ form.passenger_gender.id_for_label }}" 
-                        name="{{ form.passenger_gender.name }}">
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="{{ form.class_type.id_for_label }}">Class Type:</label>
+                <label for="{{ form.class_type.id_for_label }}">Class Type</label>
                 <select id="{{ form.class_type.id_for_label }}" 
                         name="{{ form.class_type.name }}">
-                    <option value="SL">Sleeper</option>
-                    <option value="3A">3rd AC</option>
-                    <option value="2A">2nd AC</option>
-                    <option value="1A">1st AC</option>
+                    <option value="">Select Class</option>
+                    <option value="SL">Sleeper (SL)</option>
+                    <option value="3A">3rd AC (3A)</option>
+                    <option value="2A">2nd AC (2A)</option>
+                    <option value="1A">1st AC (1A)</option>
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.booking_time.id_for_label }}">Booking Time:</label>
+                <label for="{{ form.booking_time.id_for_label }}">Booking Time</label>
                 <input type="datetime-local" id="{{ form.booking_time.id_for_label }}" 
-                       name="{{ form.booking_time.name }}">
+                       name="{{ form.booking_time.name }}"
+                       value="{{ form.booking_time.value|default:'' }}">
             </div>
             
-            <button type="submit">Submit Booking Task</button>
+            <!-- Passenger Forms -->
+            <h3>Passengers</h3>
+            <div id="passenger-forms">
+                {{ passenger_formset.management_form }}
+                
+                {% for form in passenger_formset %}
+                    <div class="passenger-form" id="passenger-{{ forloop.counter0 }}">
+                        <h4>Passenger {{ forloop.counter }}</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="error-message">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label>Age</label>
+                                {{ form.age }}
+                                {% if form.age.errors %}
+                                    <div class="error-message">{{ form.age.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label>Gender</label>
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                    <div class="error-message">{{ form.gender.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not forloop.first %}
+                            <button type="button" class="remove-passenger" onclick="removePassenger(this)">
+                                Remove Passenger
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" class="add-passenger" onclick="addPassenger()">
+                + Add Another Passenger
+            </button>
+            
+            <button type="submit" class="btn btn-primary btn-lg">
+                Create Booking Task
+            </button>
         </form>
     </div>
 
     <script>
+        // Dynamic passenger form handling
+        let formCount = {{ passenger_formset.total_form_count }};
+        const emptyForm = document.querySelector('.empty-form') || document.createElement('div');
+        
+        function addPassenger() {
+            const totalForms = document.querySelector('#id_passengers-TOTAL_FORMS');
+            const formCount = parseInt(totalForms.value);
+            
+            const newForm = document.createElement('div');
+            newForm.className = 'passenger-form';
+            newForm.innerHTML = `
+                <h4>Passenger ${formCount + 1}</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="passengers-${formCount}-name" 
+                               class="form-control" placeholder="Enter passenger name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" name="passengers-${formCount}-age" 
+                               class="form-control" placeholder="Age" min="1" max="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select name="passengers-${formCount}-gender" class="form-control" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="remove-passenger" onclick="removePassenger(this)">
+                    Remove Passenger
+                </button>
+            `;
+            
+            document.getElementById('passenger-forms').appendChild(newForm);
+            totalForms.value = formCount + 1;
+        }
+        
+        function removePassenger(button) {
+            const passengerForm = button.closest('.passenger-form');
+            passengerForm.remove();
+            
+            // Update form indices
+            const forms = document.querySelectorAll('.passenger-form');
+            const totalForms = document.querySelector('#id_passengers-TOTAL_FORMS');
+            totalForms.value = forms.length;
+            
+            forms.forEach((form, index) => {
+                const inputs = form.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    const name = input.name;
+                    const newName = name.replace(/\d+/, index);
+                    input.name = newName;
+                    input.id = newName;
+                });
+                
+                const heading = form.querySelector('h4');
+                if (heading) {
+                    heading.textContent = `Passenger ${index + 1}`;
+                }
+            });
+        }
+        
         // Enhanced Autocomplete functionality
         function autocomplete(inp, endpoint, type) {
             let currentFocus = -1;
             let debounceTimer;
             
-            // Clear any existing autocomplete items and loading indicators
             function closeAllLists(elmnt) {
                 const items = document.querySelectorAll(".autocomplete-items, .autocomplete-loading");
                 for (let i = items.length - 1; i >= 0; i--) {
@@ -122,7 +303,6 @@
                 }
             }
             
-            // Add active class to selected item
             function addActive(items) {
                 if (!items) return false;
                 removeActive(items);
@@ -131,14 +311,12 @@
                 items[currentFocus].classList.add("autocomplete-active");
             }
             
-            // Remove active class from all items
             function removeActive(items) {
                 for (let i = 0; i < items.length; i++) {
                     items[i].classList.remove("autocomplete-active");
                 }
             }
             
-            // Handle input with debouncing
             inp.addEventListener("input", function() {
                 clearTimeout(debounceTimer);
                 const val = this.value.trim();
@@ -146,8 +324,6 @@
                 closeAllLists();
                 if (!val || val.length < 2) return;
                 
-                // Show loading indicator
-                closeAllLists();
                 const loadingDiv = document.createElement("DIV");
                 loadingDiv.className = "autocomplete-loading";
                 loadingDiv.innerHTML = "Loading...";
@@ -194,7 +370,6 @@
                                     inp.value = displayText;
                                     closeAllLists();
                                     
-                                    // Trigger change event for form validation
                                     const event = new Event('change', { bubbles: true });
                                     inp.dispatchEvent(event);
                                 });
@@ -211,43 +386,38 @@
                             errorDiv.innerHTML = "<div class='autocomplete-item autocomplete-error'>Error loading suggestions</div>";
                             inp.parentNode.appendChild(errorDiv);
                             
-                            // Auto-hide error after 3 seconds
                             setTimeout(() => closeAllLists(), 3000);
                         });
-                }, 300); // 300ms debounce delay
+                }, 300);
             });
             
-            // Handle keyboard navigation
             inp.addEventListener("keydown", function(e) {
                 let items = this.parentNode.querySelectorAll(".autocomplete-items > div");
                 
-                if (e.keyCode === 40) { // Arrow down
+                if (e.keyCode === 40) {
                     e.preventDefault();
                     currentFocus++;
                     addActive(items);
-                } else if (e.keyCode === 38) { // Arrow up
+                } else if (e.keyCode === 38) {
                     e.preventDefault();
                     currentFocus--;
                     addActive(items);
-                } else if (e.keyCode === 13) { // Enter
+                } else if (e.keyCode === 13) {
                     e.preventDefault();
                     if (currentFocus > -1 && items[currentFocus]) {
                         items[currentFocus].click();
                     }
-                } else if (e.keyCode === 27) { // Escape
+                } else if (e.keyCode === 27) {
                     closeAllLists();
                 }
             });
             
-            // Close lists when clicking outside
             document.addEventListener("click", function(e) {
                 closeAllLists(e.target);
             });
         }
         
-        // Initialize autocomplete for all relevant fields
         document.addEventListener("DOMContentLoaded", function() {
-            // Get actual field elements
             const trainNameField = document.querySelector('input[name="train_name_number"]');
             const sourceStationField = document.querySelector('input[name="source_station"]');
             const destinationStationField = document.querySelector('input[name="destination_station"]');
@@ -263,13 +433,6 @@
             if (destinationStationField) {
                 autocomplete(destinationStationField, '/dashboard/autocomplete/stations/', 'station');
             }
-            
-            // Debug: Log if fields are found
-            console.log('Autocomplete initialized for:', {
-                train: !!trainNameField,
-                source: !!sourceStationField,
-                destination: !!destinationStationField
-            });
         });
     </script>
 </body>
