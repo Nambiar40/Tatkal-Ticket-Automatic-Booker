@@ -49,9 +49,10 @@ def execute_booking(booking_id=None):
                 '1A': 'H'
             }.get(booking.class_type, 'C')
             
-            booking.coach_number = f"{coach_prefix}{random.randint(1, 12)}"
+            # Get all passengers for this booking
+            passengers = booking.passengers.all()
             
-            # Generate seat number based on class
+            # Assign individual seat numbers to each passenger
             if booking.class_type == 'SL':
                 seat_range = (1, 72)
             elif booking.class_type == '3A':
@@ -63,13 +64,33 @@ def execute_booking(booking_id=None):
             else:
                 seat_range = (1, 50)
             
-            booking.seat_number = str(random.randint(*seat_range))
+            # Generate unique seat numbers for each passenger
+            available_seats = list(range(seat_range[0], seat_range[1] + 1))
+            random.shuffle(available_seats)
             
-            # Update booking status - this is the key fix
+            # Assign coach and seat to each passenger
+            coach_number = f"{coach_prefix}{random.randint(1, 12)}"
+            for i, passenger in enumerate(passengers):
+                passenger.coach_number = coach_number
+                passenger.seat_number = str(available_seats[i] if i < len(available_seats) else random.randint(*seat_range))
+                passenger.save()
+            
+            # Keep the booking-level coach number for backward compatibility
+            booking.coach_number = coach_number
+            booking.seat_number = str(available_seats[0]) if passengers else str(random.randint(*seat_range))
+            
+            # Update booking status
             booking.status = "Completed"
             booking.save(update_fields=['status', 'pnr_number', 'coach_number', 'seat_number'])
             logger.info(f"Booking {booking.id} status updated to Completed")
             
+            # Generate passenger details for ticket
+            passenger_info = []
+            for passenger in passengers:
+                passenger_info.append(f"{passenger.name} ({passenger.age}, {passenger.gender}) - Seat: {passenger.seat_number}")
+            
+            passenger_details = "<br>".join(passenger_info) if passenger_info else "No passenger details available"
+
             ticket_html = f"""
             <html>
             <head><title>Train Ticket - {booking.train_number} - {booking.train_name}</title></head>
@@ -79,9 +100,7 @@ def execute_booking(booking_id=None):
                     <hr>
                     <p><strong>Booking ID:</strong> {booking.id}</p>
                     <p><strong>Train:</strong> {booking.train_number} - {booking.train_name}</p>
-                    <p><strong>Passenger:</strong> {booking.passenger_name}</p>
-                    <p><strong>Age:</strong> {booking.passenger_age}</p>
-                    <p><strong>Gender:</strong> {booking.passenger_gender}</p>
+                    <p><strong>Passengers:</strong><br>{passenger_details}</p>
                     <p><strong>Journey Date:</strong> {booking.journey_date}</p>
                     <p><strong>From:</strong> {booking.source_station}</p>
                     <p><strong>To:</strong> {booking.destination_station}</p>

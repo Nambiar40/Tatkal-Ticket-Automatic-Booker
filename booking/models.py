@@ -59,6 +59,8 @@ class Passenger(models.Model):
         choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
         default='Male'
     )
+    seat_number = models.CharField(max_length=10, blank=True, null=True)
+    coach_number = models.CharField(max_length=5, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.seat_number}"
