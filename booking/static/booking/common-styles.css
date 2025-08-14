@@ -1,0 +1,152 @@
+/* Common Styles for Tatkal Auto Booker */
+/* Consolidated CSS to replace inline styles */
+
+/* Utility Classes */
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mb-2 {
+    margin-bottom: 2rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.mt-3 {
+    margin-top: 3rem;
+}
+
+.p-40 {
+    padding: 40px;
+}
+
+/* Dashboard Specific Styles */
+.dashboard-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.dashboard-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.dashboard-empty-state h3 {
+    margin-bottom: 0.5rem;
+}
+
+/* Login Page Styles */
+.login-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.login-footer p {
+    color: var(--text-secondary);
+}
+
+/* Passenger Form Styles */
+.passenger-form {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+}
+
+.passenger-form h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.passenger-form .form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.passenger-form .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.passenger-form .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.passenger-form .form-group input,
+.passenger-form .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.passenger-form .form-group input:focus,
+.passenger-form .form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.remove-passenger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-passenger:hover {
+    background-color: #c82333;
+}
+
+.add-passenger {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.add-passenger:hover {
+    background-color: #218838;
+}
+
+.empty-form {
+    display: none;
+}
+
+/* Task Detail Styles */
+.task-detail-station {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.task-detail-time {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}

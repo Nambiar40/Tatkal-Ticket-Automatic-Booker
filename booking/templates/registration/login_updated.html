@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Tatkal Auto Booker</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'booking/enhanced.css' %}">
+    <link rel="stylesheet" href="{% static 'booking/slideshow.css' %}">
+    <link rel="stylesheet" href="{% static 'booking/common-styles.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <!-- Slideshow Container -->
+    <div class="slideshow-container">
+        <img class="slideshow-image active" src="https://images.unsplash.com/photo-1637995735729-c43250f1ef47?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8aW5kaWFuJTIwcmFpbHdheXxlbnwwfHwwfHx8MA%3D%3D" alt="Indian Railways Train">
+        <img class="slideshow-image" src="https://www.mypunepulse.com/wp-content/uploads/2025/03/Maharashtra-Approves-Konkan-Railway-Merger-with-Indian-Railways.jpeg" alt="Luxury Indian Train">
+        <img class="slideshow-image" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Vande_Bharat_Express_around_Mumbai.jpg" alt="Indian Express Train">
+        <div class="slideshow-overlay"></div>
+        <button class="slideshow-controls slideshow-prev">&#10094;</button>
+        <button class="slideshow-controls slideshow-next">&#10095;</button>
+        <div class="slideshow-dots">
+            <span class="slideshow-dot active" data-index="0"></span>
+            <span class="slideshow-dot" data-index="1"></span>
+            <span class="slideshow-dot" data-index="2"></span>
+        </div>
+    </div>
+
+    <!-- Login Form Overlay -->
+    <div class="login-form-overlay">
+        <div class="form-container">
+            <h2>Welcome Back</h2>
+            <p class="text-center text-secondary mb-2">
+                Sign in to manage your booking tasks
+            </p>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}" 
+                               name="{{ field.name }}" 
+                               id="{{ field.id_for_label }}"
+                               placeholder="Enter your {{ field.label|lower }}"
+                               {% if field.value %}value="{{ field.value }}"{% endif %}
+                               required>
+                        {% if field.errors %}
+                            <div class="form-error">{{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-primary">
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-2">
+                <p class="text-secondary">
+                    Don't have an account? 
+                    <a href="{% url 'signup' %}">Create one here</a>
+                </p>
+            </div>
+
+            {% if form.errors %}
+                <div class="error-message">
+                    <strong>Login failed:</strong> Please check your username and password.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="{% static 'booking/slideshow.js' %}"></script>
+</body>
+</html>
