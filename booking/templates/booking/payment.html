@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Tatkal Auto Booker</title>
+    <link rel="stylesheet" href="{% static 'booking/enhanced.css' %}">
+    <style>
+        .fare-summary {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .fare-summary h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .fare-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .payment-details {
+            display: none;
+        }
+        .payment-method:checked + .payment-details {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Payment Details</h2>
+        
+        <!-- Fare Summary -->
+        <div class="fare-summary">
+            <h4>Fare Summary</h4>
+            <p>Total Amount: <span class="fare-amount">₹{{ fare }}</span></p>
+            <p>Booking Reference: {{ booking.train_name_number }}</p>
+            <p>Passengers: {{ booking.passengers.count }}</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Hidden amount field -->
+            <input type="hidden" name="amount" value="{{ fare }}">
+            
+            <div class="form-group">
+                <label for="{{ payment_form.payment_method.id_for_label }}">Payment Method</label>
+                {{ payment_form.payment_method }}
+            </div>
+
+            <!-- Payment method specific fields will be shown based on selection -->
+            <div class="form-group">
+                <label for="{{ payment_form.upi_id.id_for_label }}">UPI ID</label>
+                {{ payment_form.upi_id }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ payment_form.card_number.id_for_label }}">Card Number</label>
+                {{ payment_form.card_number }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ payment_form.card_holder_name.id_for_label }}">Card Holder Name</label>
+                {{ payment_form.card_holder_name }}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ payment_form.card_expiry.id_for_label }}">Expiry Date (MM/YY)</label>
+                    {{ payment_form.card_expiry }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ payment_form.card_cvv.id_for_label }}">CVV</label>
+                    {{ payment_form.card_cvv }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ payment_form.bank_name.id_for_label }}">Bank Name</label>
+                {{ payment_form.bank_name }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Complete Payment</button>
+        </form>
+    </div>
+
+    <script>
+        // JavaScript to show/hide payment method specific fields
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+            
+            function togglePaymentFields() {
+                const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                
+                // Hide all fields initially
+                document.querySelectorAll('.form-group').forEach(group => {
+                    if (group.querySelector('input[name="upi_id"]') || 
+                        group.querySelector('input[name="card_number"]') || 
+                        group.querySelector('input[name="bank_name"]')) {
+                        group.style.display = 'none';
+                    }
+                });
+                
+                // Show fields based on selected method
+                if (selectedMethod === 'UPI') {
+                    document.querySelector('.form-group:has(input[name="upi_id"])').style.display = 'block';
+                } else if (selectedMethod === 'CREDIT_CARD' || selectedMethod === 'DEBIT_CARD') {
+                    document.querySelector('.form-group:has(input[name="card_number"])').style.display = 'block';
+                    document.querySelector('.form-group:has(input[name="card_holder_name"])').style.display = 'block';
+                    document.querySelector('.form-row:has(input[name="card_expiry"])').style.display = 'flex';
+                } else if (selectedMethod === 'NET_BANKING') {
+                    document.querySelector('.form-group:has(input[name="bank_name"])').style.display = 'block';
+                }
+            }
+            
+            // Add event listeners to payment method radios
+            paymentMethodRadios.forEach(radio => {
+                radio.addEventListener('change', togglePaymentFields);
+            });
+            
+            // Initial call to set correct visibility
+            if (paymentMethodRadios.length > 0) {
+                togglePaymentFields();
+            }
+        });
+    </script>
+</body>
+</html>

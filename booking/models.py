@@ -1,6 +1,39 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Payment(models.Model):
+    """Model to store payment details for bookings"""
+    PAYMENT_METHODS = [
+        ('UPI', 'UPI'),
+        ('CREDIT_CARD', 'Credit Card'),
+        ('DEBIT_CARD', 'Debit Card'),
+        ('NET_BANKING', 'Net Banking'),
+        ('WALLET', 'Wallet'),
+    ]
+    
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('REFUNDED', 'Refunded'),
+    ]
+    
+    booking = models.OneToOneField('Booking', on_delete=models.CASCADE, related_name='payment')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='UPI')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    upi_id = models.CharField(max_length=50, blank=True, null=True)
+    card_number = models.CharField(max_length=16, blank=True, null=True)
+    card_holder_name = models.CharField(max_length=100, blank=True, null=True)
+    card_expiry = models.CharField(max_length=5, blank=True, null=True)
+    card_cvv = models.CharField(max_length=4, blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    
+    def __str__(self):
+        return f"Payment for {self.booking.train_number} - {self.status}"
+
 class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     

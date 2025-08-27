@@ -1,9 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import Booking, Passenger
-from .forms import BookingForm, PassengerFormSet
+from .models import Booking, Passenger, Payment
+from .forms import BookingForm, PassengerFormSet, PaymentForm
 from .tasks import execute_booking
 
 @login_required
@@ -14,12 +14,13 @@ def dashboard(request):
 
 @login_required
 def add_task(request):
-    """Add a new booking task with passenger list"""
+    """Add a new booking task with passenger list and payment details"""
     if request.method == "POST":
         form = BookingForm(request.POST)
         passenger_formset = PassengerFormSet(request.POST, prefix='passengers')
+        payment_form = PaymentForm(request.POST)
         
-        if form.is_valid() and passenger_formset.is_valid():
+        if form.is_valid() and passenger_formset.is_valid() and payment_form.is_valid():
             booking = form.save(commit=False)
             booking.user = request.user
             booking.status = "Scheduled"
@@ -40,33 +41,109 @@ def add_task(request):
             
             booking.save()
             
+            # Save payment details
+            payment = payment_form.save(commit=False)
+            payment.booking = booking
+            payment.save()
+
             # Save passengers
             passengers = passenger_formset.save(commit=False)
             for passenger in passengers:
                 passenger.booking = booking
                 passenger.save()
 
-            # Schedule execution at booking.booking_time
-            if booking.booking_time and booking.booking_time > timezone.now():
+            # Schedule execution at booking.booking_time if applicable
+            if booking.booking_time and booking.booking_time > timezone.now() and payment.status == 'SUCCESS':
                 execute_booking.apply_async(
                     args=[booking.id],
                     eta=booking.booking_time
                 )
-                print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time}")
+                print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time} with payment {payment.id}")
             else:
                 execute_booking.delay(booking.id)
-                print(f"[INFO] Booking {booking.id} executed immediately")
+                print(f"[INFO] Booking {booking.id} executed immediately with payment {payment.id}")
 
             return redirect("dashboard")
     else:
         form = BookingForm()
         passenger_formset = PassengerFormSet(prefix='passengers')
+        payment_form = PaymentForm()
 
     return render(request, "booking/add_task.html", {
         "form": form,
-        "passenger_formset": passenger_formset
+        "passenger_formset": passenger_formset,
+        "payment_form": payment_form
     })
 
+@login_required
+def booking_details(request):
+    """Step 1: Collect booking details"""
+    if request.method == "POST":
+        form = BookingForm(request.POST)
+        passenger_formset = PassengerFormSet(request.POST, prefix='passengers')
+        
+        if form.is_valid() and passenger_formset.is_valid():
+            booking = form.save(commit=False)
+            booking.user = request.user
+            booking.status = "Scheduled"
+            booking.save()
+            
+            # Save passengers
+            passengers = passenger_formset.save(commit=False)
+            for passenger in passengers:
+                passenger.booking = booking
+                passenger.save()
+            
+            # Redirect to payment page with booking ID
+            return redirect('payment', booking_id=booking.id)
+    else:
+        form = BookingForm()
+        passenger_formset = PassengerFormSet(prefix='passengers')
+
+    return render(request, "booking/booking_details.html", {
+        "form": form,
+        "passenger_formset": passenger_formset,
+    })
+
+@login_required
+def payment(request, booking_id):
+    """Step 2: Collect payment details"""
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    # Calculate fare
+    fare = calculate_fare(booking)
+    
+    if request.method == "POST":
+        payment_form = PaymentForm(request.POST)
+        if payment_form.is_valid():
+            payment = payment_form.save(commit=False)
+            payment.booking = booking
+            payment.amount = fare
+            payment.save()
+            return redirect("dashboard")  # Redirect to dashboard after payment
+    else:
+        payment_form = PaymentForm(initial={'amount': fare})
+
+    return render(request, "booking/payment.html", {
+        "payment_form": payment_form,
+        "booking": booking,
+        "fare": fare,
+    })
+
+def calculate_fare(booking):
+    """Calculate fare based on distance, class type, and number of passengers"""
+    base_fare = 100  # Example base fare
+    class_multiplier = {
+        'SL': 1,
+        '3A': 1.5,
+        '2A': 2,
+        '1A': 2.5
+    }
+    distance = 100  # Placeholder for distance calculation
+    num_passengers = booking.passengers.count()
+    
+    fare = base_fare * class_multiplier.get(booking.class_type, 1) * num_passengers * (distance / 100)
+    return round(fare, 2)
 
 def autocomplete_stations(request):
     """Autocomplete for station names"""
