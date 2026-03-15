@@ -38,10 +38,18 @@ else:
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Add your static files directories here
+import pathlib
+STATICFILES_DIRS = [
+    pathlib.Path(BASE_DIR) / 'booking' / 'static',
+]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use whitenoise for static file serving in production
+# Using simple staticfiles storage for debugging
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # -------------------------------------------------
 # MIDDLEWARE
@@ -110,6 +118,9 @@ WSGI_APPLICATION = 'tatkal_auto_booker.wsgi.application'
 # -------------------------------------------------
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Explicitly set the login template
+LOGIN_URL = 'login'
 
 # -------------------------------------------------
 # CELERY CONFIGURATION

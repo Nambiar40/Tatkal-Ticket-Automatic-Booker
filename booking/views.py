@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Booking, Passenger, Payment
 from .forms import BookingForm, PassengerFormSet, PaymentForm
 from .tasks import execute_booking
+import re
 
 @login_required
 def dashboard(request):
@@ -16,54 +18,68 @@ def dashboard(request):
 def add_task(request):
     """Add a new booking task with passenger list and payment details"""
     if request.method == "POST":
-        form = BookingForm(request.POST)
-        passenger_formset = PassengerFormSet(request.POST, prefix='passengers')
-        payment_form = PaymentForm(request.POST)
+        # Manual parsing for hand-coded form - handles dynamic passengers
+        booking_data = {
+            'train_name_number': request.POST.get('train_name_number'),
+            'source_station': request.POST.get('source_station'),
+            'destination_station': request.POST.get('destination_station'),
+            'journey_date': request.POST.get('journey_date'),
+            'class_type': request.POST.get('class_type', 'SL'),
+            'booking_time': request.POST.get('booking_time') or None,
+        }
         
-        if form.is_valid() and passenger_formset.is_valid() and payment_form.is_valid():
-            booking = form.save(commit=False)
-            booking.user = request.user
-            booking.status = "Scheduled"
+        if all([booking_data['train_name_number'], booking_data['source_station'], booking_data['destination_station'], booking_data['journey_date']]):
+            # Create booking
+            booking = Booking.objects.create(
+                user=request.user,
+                **{k: v for k, v in booking_data.items() if v},
+                status="Scheduled"
+            )
             
-            # Parse train name and number from train_name_number field
+            # Parse train info
             train_info = booking.train_name_number
-            if train_info and train_info != "Unknown Train 00000":
-                parts = train_info.split()
-                if len(parts) >= 2:
-                    booking.train_number = parts[-1]
-                    booking.train_name = ' '.join(parts[:-1])
-                else:
-                    booking.train_name = train_info
-                    booking.train_number = "00000"
-            else:
-                booking.train_name = "Unknown Train"
-                booking.train_number = "00000"
-            
+            parts = train_info.split()
+            if len(parts) >= 2:
+                booking.train_number = parts[-1]
+                booking.train_name = ' '.join(parts[:-1])
             booking.save()
             
-            # Save payment details
-            payment = payment_form.save(commit=False)
-            payment.booking = booking
-            payment.save()
-
-            # Save passengers
-            passengers = passenger_formset.save(commit=False)
-            for passenger in passengers:
-                passenger.booking = booking
-                passenger.save()
-
-            # Schedule execution at booking.booking_time if applicable
-            if booking.booking_time and booking.booking_time > timezone.now() and payment.status == 'SUCCESS':
-                execute_booking.apply_async(
-                    args=[booking.id],
-                    eta=booking.booking_time
-                )
-                print(f"[INFO] Booking {booking.id} scheduled for {booking.booking_time} with payment {payment.id}")
-            else:
+            # Passengers
+            i = 0
+            while request.POST.get(f'passengers-{i}-name'):
+                name = request.POST.get(f'passengers-{i}-name')
+                age = request.POST.get(f'passengers-{i}-age')
+                gender = request.POST.get(f'passengers-{i}-gender')
+                if name and age and gender:
+                    Passenger.objects.create(
+                        booking=booking,
+                        name=name,
+                        age=int(age),
+                        gender=gender
+                    )
+                i += 1
+            
+            # Payment
+            payment = Payment.objects.create(
+                booking=booking,
+                payment_method=request.POST.get('payment_method', 'UPI'),
+                amount=float(request.POST.get('amount', 0)),
+                status='PENDING',
+                upi_id=request.POST.get('upi_id', ''),
+                bank_name=request.POST.get('bank_name', ''),
+                card_number=request.POST.get('card_number', '')
+            )
+            
+            try:
                 execute_booking.delay(booking.id)
-                print(f"[INFO] Booking {booking.id} executed immediately with payment {payment.id}")
-
-            return redirect("dashboard")
+            except:
+                print("[WARNING] Celery Redis not running, booking saved but no async execution")
+            
+            messages.success(request, f'🚀 Booking #{booking.id} created! Check dashboard.')
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Fill all required booking fields.')
+    
     else:
         form = BookingForm()
         passenger_formset = PassengerFormSet(prefix='passengers')
@@ -72,7 +88,8 @@ def add_task(request):
     return render(request, "booking/add_task.html", {
         "form": form,
         "passenger_formset": passenger_formset,
-        "payment_form": payment_form
+        "payment_form": payment_form,
+        "messages": messages.get_messages(request)
     })
 
 @login_required

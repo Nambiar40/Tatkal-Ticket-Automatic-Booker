@@ -156,22 +156,21 @@
         
         <form method="post">
             {% csrf_token %}
-            <div class="form-group">
-                    <label for="id_username">Username</label>
-                    <input type="text" 
-                           name="username" 
-                           id="id_username"
-                           placeholder="Enter your username"
-                           required>
-                </div>
+            
+            {% for field in form %}
                 <div class="form-group">
-                    <label for="id_password">Password</label>
-                    <input type="password" 
-                           name="password" 
-                           id="id_password"
-                           placeholder="Enter your password"
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    <input type="{{ field.field.widget.input_type }}" 
+                           name="{{ field.name }}" 
+                           id="{{ field.id_for_label }}"
+                           placeholder="Enter your {{ field.label|lower }}"
+                           {% if field.value %}value="{{ field.value }}"{% endif %}
                            required>
+                    {% if field.errors %}
+                        <div style="color: red; font-size: 12px;">{{ field.errors.0 }}</div>
+                    {% endif %}
                 </div>
+            {% endfor %}
             
             <button type="submit">Sign In</button>
         </form>
@@ -179,9 +178,15 @@
         <div class="text-center mt-2">
             <p class="text-secondary">
                 Don't have an account? 
-                <a href="/accounts/signup/">Create one here</a>
+                <a href="{% url 'signup' %}">Create one here</a>
             </p>
         </div>
+
+        {% if form.errors %}
+            <div class="error-message">
+                <strong>Login failed:</strong> Please check your username and password.
+            </div>
+        {% endif %}
     </div>
 
     <script>

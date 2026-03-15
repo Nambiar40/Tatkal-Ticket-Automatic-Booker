@@ -2,6 +2,7 @@ import os
 import logging
 from celery import shared_task
 from django.conf import settings
+from django.utils import timezone
 from .models import Booking
 from xhtml2pdf import pisa
 from datetime import datetime, timedelta
@@ -152,6 +153,7 @@ def update_scheduled_bookings():
     # Get bookings that are scheduled and ready to process
     scheduled_bookings = Booking.objects.filter(
         status='Scheduled',
+        booking_time__lte=timezone.now(),
         journey_date__gte=datetime.now().date()
     )
     

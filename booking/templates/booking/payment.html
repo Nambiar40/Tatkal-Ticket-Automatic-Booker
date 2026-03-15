@@ -5,42 +5,248 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - Tatkal Auto Booker</title>
-    <link rel="stylesheet" href="{% static 'booking/enhanced.css' %}">
     <style>
-        .fare-summary {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Full page background with slideshow */
+        .slideshow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .slideshow-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .slideshow-image.active {
+            opacity: 1;
+        }
+
+        .slideshow-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Payment form container */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
             padding: 20px;
+        }
+
+        .payment-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .payment-container h2 {
+            text-align: center;
+            color: #333;
             margin-bottom: 20px;
         }
+
+        /* Fare Summary */
+        .fare-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
         .fare-summary h4 {
-            margin-top: 0;
-            color: #495057;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            opacity: 0.9;
         }
+
         .fare-amount {
-            font-size: 24px;
+            font-size: 36px;
             font-weight: bold;
-            color: #28a745;
+            margin: 10px 0;
         }
-        .payment-details {
+
+        .fare-details {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        /* Payment method radio buttons */
+        .payment-methods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .payment-method-option {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .payment-method-option input[type="radio"] {
             display: none;
         }
-        .payment-method:checked + .payment-details {
+
+        .payment-method-option label {
             display: block;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .payment-method-option input[type="radio"]:checked + label {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+
+        /* Payment details sections */
+        .payment-details {
+            display: none;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .payment-details.active {
+            display: block;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Submit button */
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Back link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #007bff;
+        }
+
+        /* Error message */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="form-container">
+    <!-- Slideshow Container -->
+    <div class="slideshow-container">
+        <img class="slideshow-image active" src="https://images.unsplash.com/photo-1637995735729-c43250f1ef47?fm=jpg&q=60&w=3000" alt="Indian Railways Train">
+        <img class="slideshow-image" src="https://www.mypunepulse.com/wp-content/uploads/2025/03/Maharashtra-Approves-Konkan-Railway-Merger-with-Indian-Railways.jpeg" alt="Luxury Indian Train">
+        <img class="slideshow-image" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Vande_Bharat_Express_around_Mumbai.jpg" alt="Indian Express Train">
+        <div class="slideshow-overlay"></div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="payment-container">
         <h2>Payment Details</h2>
         
         <!-- Fare Summary -->
         <div class="fare-summary">
-            <h4>Fare Summary</h4>
-            <p>Total Amount: <span class="fare-amount">₹{{ fare }}</span></p>
-            <p>Booking Reference: {{ booking.train_name_number }}</p>
-            <p>Passengers: {{ booking.passengers.count }}</p>
+            <h4>Total Fare</h4>
+            <div class="fare-amount">₹{{ fare }}</div>
+            <div class="fare-details">
+                Train: {{ booking.train_name_number }}<br>
+                Passengers: {{ booking.passengers.count }}
+            </div>
         </div>
 
         <form method="post">
@@ -49,44 +255,70 @@
             <!-- Hidden amount field -->
             <input type="hidden" name="amount" value="{{ fare }}">
             
+            <!-- Payment Method Selection -->
             <div class="form-group">
-                <label for="{{ payment_form.payment_method.id_for_label }}">Payment Method</label>
-                {{ payment_form.payment_method }}
-            </div>
-
-            <!-- Payment method specific fields will be shown based on selection -->
-            <div class="form-group">
-                <label for="{{ payment_form.upi_id.id_for_label }}">UPI ID</label>
-                {{ payment_form.upi_id }}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ payment_form.card_number.id_for_label }}">Card Number</label>
-                {{ payment_form.card_number }}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ payment_form.card_holder_name.id_for_label }}">Card Holder Name</label>
-                {{ payment_form.card_holder_name }}
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="{{ payment_form.card_expiry.id_for_label }}">Expiry Date (MM/YY)</label>
-                    {{ payment_form.card_expiry }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ payment_form.card_cvv.id_for_label }}">CVV</label>
-                    {{ payment_form.card_cvv }}
+                <label>Select Payment Method</label>
+                <div class="payment-methods">
+                    <div class="payment-method-option">
+                        <input type="radio" name="payment_method" id="payment_method_0" value="UPI" {% if payment_form.payment_method.value == 'UPI' %}checked{% endif %}>
+                        <label for="payment_method_0">UPI</label>
+                    </div>
+                    <div class="payment-method-option">
+                        <input type="radio" name="payment_method" id="payment_method_1" value="CREDIT_CARD" {% if payment_form.payment_method.value == 'CREDIT_CARD' %}checked{% endif %}>
+                        <label for="payment_method_1">Credit Card</label>
+                    </div>
+                    <div class="payment-method-option">
+                        <input type="radio" name="payment_method" id="payment_method_2" value="DEBIT_CARD" {% if payment_form.payment_method.value == 'DEBIT_CARD' %}checked{% endif %}>
+                        <label for="payment_method_2">Debit Card</label>
+                    </div>
+                    <div class="payment-method-option">
+                        <input type="radio" name="payment_method" id="payment_method_3" value="NET_BANKING" {% if payment_form.payment_method.value == 'NET_BANKING' %}checked{% endif %}>
+                        <label for="payment_method_3">Net Banking</label>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="{{ payment_form.bank_name.id_for_label }}">Bank Name</label>
-                {{ payment_form.bank_name }}
+            <!-- UPI Details -->
+            <div class="payment-details" id="upi-details">
+                <div class="form-group">
+                    <label for="{{ payment_form.upi_id.id_for_label }}">UPI ID</label>
+                    <input type="text" name="upi_id" id="{{ payment_form.upi_id.id_for_label }}" placeholder="e.g., name@upi">
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Complete Payment</button>
+            <!-- Card Details -->
+            <div class="payment-details" id="card-details">
+                <div class="form-group">
+                    <label for="{{ payment_form.card_number.id_for_label }}">Card Number</label>
+                    <input type="text" name="card_number" id="{{ payment_form.card_number.id_for_label }}" placeholder="1234 5678 9012 3456" maxlength="16">
+                </div>
+                <div class="form-group">
+                    <label for="{{ payment_form.card_holder_name.id_for_label }}">Card Holder Name</label>
+                    <input type="text" name="card_holder_name" id="{{ payment_form.card_holder_name.id_for_label }}" placeholder="Name on card">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ payment_form.card_expiry.id_for_label }}">Expiry Date</label>
+                        <input type="text" name="card_expiry" id="{{ payment_form.card_expiry.id_for_label }}" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ payment_form.card_cvv.id_for_label }}">CVV</label>
+                        <input type="text" name="card_cvv" id="{{ payment_form.card_cvv.id_for_label }}" placeholder="123" maxlength="4">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Banking Details -->
+            <div class="payment-details" id="netbanking-details">
+                <div class="form-group">
+                    <label for="{{ payment_form.bank_name.id_for_label }}">Bank Name</label>
+                    <input type="text" name="bank_name" id="{{ payment_form.bank_name.id_for_label }}" placeholder="e.g., State Bank of India">
+                </div>
+            </div>
+
+            <button type="submit">Complete Payment</button>
+            
+            <a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
         </form>
     </div>
 
@@ -94,28 +326,27 @@
         // JavaScript to show/hide payment method specific fields
         document.addEventListener('DOMContentLoaded', function() {
             const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+            const upiDetails = document.getElementById('upi-details');
+            const cardDetails = document.getElementById('card-details');
+            const netbankingDetails = document.getElementById('netbanking-details');
             
             function togglePaymentFields() {
-                const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
                 
-                // Hide all fields initially
-                document.querySelectorAll('.form-group').forEach(group => {
-                    if (group.querySelector('input[name="upi_id"]') || 
-                        group.querySelector('input[name="card_number"]') || 
-                        group.querySelector('input[name="bank_name"]')) {
-                        group.style.display = 'none';
+                // Hide all details initially
+                upiDetails.classList.remove('active');
+                cardDetails.classList.remove('active');
+                netbankingDetails.classList.remove('active');
+                
+                if (selectedMethod) {
+                    const value = selectedMethod.value;
+                    if (value === 'UPI') {
+                        upiDetails.classList.add('active');
+                    } else if (value === 'CREDIT_CARD' || value === 'DEBIT_CARD') {
+                        cardDetails.classList.add('active');
+                    } else if (value === 'NET_BANKING') {
+                        netbankingDetails.classList.add('active');
                     }
-                });
-                
-                // Show fields based on selected method
-                if (selectedMethod === 'UPI') {
-                    document.querySelector('.form-group:has(input[name="upi_id"])').style.display = 'block';
-                } else if (selectedMethod === 'CREDIT_CARD' || selectedMethod === 'DEBIT_CARD') {
-                    document.querySelector('.form-group:has(input[name="card_number"])').style.display = 'block';
-                    document.querySelector('.form-group:has(input[name="card_holder_name"])').style.display = 'block';
-                    document.querySelector('.form-row:has(input[name="card_expiry"])').style.display = 'flex';
-                } else if (selectedMethod === 'NET_BANKING') {
-                    document.querySelector('.form-group:has(input[name="bank_name"])').style.display = 'block';
                 }
             }
             
@@ -128,6 +359,23 @@
             if (paymentMethodRadios.length > 0) {
                 togglePaymentFields();
             }
+
+            // Simple slideshow
+            const slides = document.querySelectorAll('.slideshow-image');
+            let currentIndex = 0;
+
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+            }
+
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % slides.length;
+                showSlide(currentIndex);
+            }
+
+            setInterval(nextSlide, 5000);
         });
     </script>
 </body>
