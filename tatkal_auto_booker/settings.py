@@ -10,7 +10,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # -------------------------------------------------
 SECRET_KEY = 'django-insecure-change-this-in-production-1234567890'
 DEBUG = True
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['web-production-ac723.up.railway.app', 'web-production-ac723.up.railway.internal', '127.0.0.1', 'localhost', '*.railway.app'] 
+
+# CSRF trusted origins for Railway
+CSRF_TRUSTED_ORIGINS = ['https://web-production-ac723.up.railway.app']
 
 # -------------------------------------------------
 # DATABASE CONFIG
