@@ -8,5 +8,5 @@
 name = "tatkal-app"
 source = "."
 env = [ "NODE_VERSION=20" ]
-http:
-  port: 8000
+[http]
+  port = 8000
