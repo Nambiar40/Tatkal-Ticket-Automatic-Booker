@@ -1,0 +1,12 @@
+[build]
+  builder = "NIXPACKS"
+
+[deploy]
+  startCommand = "gunicorn tatkal_auto_booker.wsgi"
+
+[[services]]
+name = "tatkal-app"
+source = "."
+env = [ "NODE_VERSION=20" ]
+http:
+  port: 8000

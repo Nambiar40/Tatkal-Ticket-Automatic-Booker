@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Task - Train Booker</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'booking/slideshow.css' %}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; padding: 20px; min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); padding: 40px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; min-height: 100vh; margin: 0; }
+        .page-wrapper { position: relative; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); padding: 40px; position: relative; z-index: 2; }
         h1 { text-align: center; color: #1f2937; margin-bottom: 10px; font-size: 28px; }
         h2 { color: #374151; margin: 30px 0 20px 0; font-size: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
         .row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -56,17 +59,33 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚂 Tatkal Auto Booker - Add Task</h1>
-        <p style="text-align: center; color: #6b7280; margin-bottom: 30px; font-size: 16px;">Fill details - <strong>type 2+ chars in train/station for instant dropdown list</strong></p>
+    <!-- Slideshow Container -->
+    <div class="slideshow-container">
+        <img class="slideshow-image active" src="https://images.unsplash.com/photo-1637995735729-c43250f1ef47?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8aW5kaWFuJTIwcmFpbHdheXxlbnwwfHwwfHx8MA%3D%3D" alt="Indian Railways Train">
+        <img class="slideshow-image" src="https://www.mypunepulse.com/wp-content/uploads/2025/03/Maharashtra-Approves-Konkan-Railway-Merger-with-Indian-Railways.jpeg" alt="Luxury Indian Train">
+        <img class="slideshow-image" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Vande_Bharat_Express_around_Mumbai.jpg" alt="Indian Express Train">
+        <div class="slideshow-overlay"></div>
+        <button class="slideshow-controls slideshow-prev">&#10094;</button>
+        <button class="slideshow-controls slideshow-next">&#10095;</button>
+        <div class="slideshow-dots">
+            <span class="slideshow-dot active" data-index="0"></span>
+            <span class="slideshow-dot" data-index="1"></span>
+            <span class="slideshow-dot" data-index="2"></span>
+        </div>
+    </div>
 
-        <form method="post">
-            {% csrf_token %}
+    <div class="page-wrapper">
+        <div class="container">
+            <h1> Tatkal Auto Booker - Add Task</h1>
+            <p style="text-align: center; color: #6b7280; margin-bottom: 30px; font-size: 16px;"> <strong></strong></p>
 
-            <h2>Train Journey</h2>
+            <form method="post">
+                {% csrf_token %}
+
+                <h2>Train Journey</h2>
             <div class="row">
                 <div class="col">
-                    <label>Train (type '122' → see 12221 Duronto etc)</label>
+                    <label>Train (type '122' )</label>
                     <div class="autocomplete-container">
                         <input type="text" name="train_name_number" placeholder="12221 - Pune Howrah Duronto..." autocomplete="off" required>
                     </div>
@@ -150,7 +169,7 @@
             </div>
             <div id="payment-extra"></div>
 
-            <button type="submit" id="submit" class="btn btn-primary">🚀 Create Booking Task Now</button>
+            <button type="submit" id="submit" class="btn btn-primary"> Create Booking Task Now</button>
         </form>
 
         {% if messages %}
@@ -161,6 +180,7 @@
         </ul>
         {% endif %}
         <a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
+        </div>
     </div>
 
     <style>
@@ -185,6 +205,7 @@
         }
     </style>
 
+    <script src="{% static 'booking/slideshow.js' %}"></script>
     <script>
         let passengerNum = 1;
 
